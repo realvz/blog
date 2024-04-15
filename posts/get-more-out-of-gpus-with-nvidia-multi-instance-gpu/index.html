@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run more pods per GPU with NVIDIA Multi-Instance GPU</title>
+<link rel="stylesheet" href="/assets/built/screen.css?v=ce0a9a97d4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Mulish:ital,wght@0,400;0,700;0,800;1,400;1,700&display=swap">
+<script>
+        if (localStorage.getItem('alto_dark') == 'true') {
+            document.documentElement.classList.add('dark-mode');
+        }
+    </script>
+<meta name="description" content="This post explains how to maximize GPU resource usage in Amazon EKS clusters.">
+<link rel="icon" href="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/04/code-branch.png" type="image/png">
+<link rel="canonical" href="https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/">
+<meta name="referrer" content="no-referrer-when-downgrade">
+<meta property="og:site_name" content="Re Alvarez Parmar&#x27;s Blog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Run more pods per GPU with NVIDIA Multi-Instance GPU">
+<meta property="og:description" content="This post explains how to maximize GPU resource usage in Amazon EKS clusters.">
+<meta property="og:url" content="https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/">
+<meta property="og:image" content="https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;2000content/images/size/w1200">
+<meta property="article:published_time" content="2023-05-23T23:35:20.000Z">
+<meta property="article:modified_time" content="2023-05-23T23:35:20.000Z">
+<meta property="article:tag" content="NVIDIA">
+<meta property="article:tag" content="Machine Learning">
+<meta property="article:tag" content="Amazon EKS">
+<meta property="article:tag" content="Kubernetes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Run more pods per GPU with NVIDIA Multi-Instance GPU">
+<meta name="twitter:description" content="This post explains how to maximize GPU resource usage in Amazon EKS clusters.">
+<meta name="twitter:url" content="https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;2000content/images/size/w1200">
+<meta name="twitter:label1" content="Written by">
+<meta name="twitter:data1" content="Re Alvarez Parmar">
+<meta name="twitter:label2" content="Filed under">
+<meta name="twitter:data2" content="NVIDIA, Machine Learning, Amazon EKS, Kubernetes">
+<meta name="twitter:site" content="@realz">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="800">
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Re Alvarez Parmar&#x27;s Blog",
+        "url": "https://realvz.github.io/blog/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/04/code-branch.png",
+            "width": 60,
+            "height": 60
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Re Alvarez Parmar",
+        "image": {
+            "@type": "ImageObject",
+            "url": "https://www.gravatar.com/avatar/2ea5788958b69e3c318e7b5c1562a2b4?s=250&r=x&d=mp",
+            "width": 250,
+            "height": 250
+        },
+        "url": "https://realvz.github.io/blog/author/re/",
+        "sameAs": []
+    },
+    "headline": "Run more pods per GPU with NVIDIA Multi-Instance GPU",
+    "url": "https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/",
+    "datePublished": "2023-05-23T23:35:20.000Z",
+    "dateModified": "2023-05-23T23:35:20.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&ixlib=rb-4.0.3&q=80&w=2000content/images/size/w1200",
+        "width": 1200,
+        "height": 800
+    },
+    "keywords": "NVIDIA, Machine Learning, Amazon EKS, Kubernetes",
+    "description": "This post explains how to maximize GPU resource usage in Amazon EKS clusters. ",
+    "mainEntityOfPage": "https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/"
+}
+    </script>
+<meta name="generator" content="Ghost 5.79">
+<link rel="alternate" type="application/rss+xml" title="Re Alvarez Parmar&#x27;s Blog" href="https://realvz.github.io/blog/rss/">
+<script defer src="https://cdn.jsdelivr.net/ghost/portal@~2.37/umd/portal.min.js" data-i18n="false" data-ghost="https://realvz.github.io/blog/" data-key="875679d7145ae8b3c4db5168c2" data-api="https://realvz.github.io/blog/ghost/api/content/" crossorigin="anonymous"></script><style id="gh-members-styles">.gh-post-upgrade-cta-content,
+.gh-post-upgrade-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    text-align: center;
+    width: 100%;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.gh-post-upgrade-cta-content {
+    border-radius: 8px;
+    padding: 40px 4vw;
+}
+
+.gh-post-upgrade-cta h2 {
+    color: #ffffff;
+    font-size: 28px;
+    letter-spacing: -0.2px;
+    margin: 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta p {
+    margin: 20px 0 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta small {
+    font-size: 16px;
+    letter-spacing: -0.2px;
+}
+
+.gh-post-upgrade-cta a {
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 500;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a:hover {
+    color: #ffffff;
+    opacity: 0.8;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a.gh-btn {
+    display: block;
+    background: #ffffff;
+    text-decoration: none;
+    margin: 28px 0 0;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.gh-post-upgrade-cta a.gh-btn:hover {
+    opacity: 0.92;
+}</style>
+<script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/sodo-search.min.js" data-key="875679d7145ae8b3c4db5168c2" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/main.css" data-sodo-search="https://realvz.github.io/blog/" crossorigin="anonymous"></script>
+<link href="https://realvz.github.io/blog/webmentions/receive/" rel="webmention">
+<script defer src="/public/cards.min.js?v=ce0a9a97d4"></script>
+<link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=ce0a9a97d4">
+<script defer src="/public/member-attribution.min.js?v=ce0a9a97d4"></script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B5XRB3YVTR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B5XRB3YVTR');
+</script><style>:root {--ghost-accent-color: #3a88fe;}</style>
+</head>
+<body class="post-template tag-nvidia tag-machine-learning tag-amazon-eks tag-kubernetes has-serif-title has-serif-body">
+<div class="site">
+<header class="site-header container">
+<div class="navbar">
+<div class="navbar-left">
+<div class="burger hidden-lg hidden-xl"></div>
+<a class="logo" href="https://realvz.github.io/blog">
+<span class="logo-text">Re Alvarez Parmar&#x27;s Blog</span>
+</a> <div class="sep hidden-xs hidden-sm hidden-sm"></div>
+<nav class="main-menu hidden-xs hidden-sm hidden-md">
+<ul class="nav-list u-plain-list">
+<li class="menu-item menu-item-home"><a class="menu-item-link" href="https://realvarez.com">Home</a></li>
+<li class="menu-item menu-item-about"><a class="menu-item-link" href="https://realvz.github.io/blog/about/">About</a></li>
+</ul>
+</nav>
+</div>
+<div class="navbar-right">
+<div class="toggle-track">
+<div class="toggle-moon"><i class="icon icon-brightness-2"></i></div>
+<div class="toggle-sun"><i class="icon icon-white-balance-sunny"></i></div>
+<div class="toggle-thumb"></div>
+</div>
+</div>
+</div>
+</header> <div class="site-content">
+<div class="content-area">
+<main class="site-main">
+<article class="post tag-nvidia tag-machine-learning tag-amazon-eks tag-kubernetes single-post">
+<header class="post-header big-title container medium">
+<h1 class="post-title">Run more pods per GPU with NVIDIA Multi-Instance GPU</h1>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2023-05-23">May 23, 2023</time>
+</span>
+<span class="post-meta-item post-meta-length">
+10 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-nvidia" href="/tag/nvidia/" title="NVIDIA">NVIDIA</a><a class="post-tag post-tag-machine-learning" href="/tag/machine-learning/" title="Machine Learning">Machine Learning</a><a class="post-tag post-tag-amazon-eks" href="/tag/amazon-eks/" title="Amazon EKS">Amazon EKS</a><a class="post-tag post-tag-kubernetes" href="/tag/kubernetes/" title="Kubernetes">Kubernetes</a>
+</span>
+</div>
+</header> <figure class="post-media container large">
+<div class="u-placeholder horizontal">
+<a class="post-image-link" href="/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/">
+<img class="post-image lazyload u-object-fit" data-srcset="https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;400 400w, https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;750 750w, https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960 960w, https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1140 1140w, https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1920 1920w" data-sizes="auto" src="https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Run more pods per GPU with NVIDIA Multi-Instance GPU">
+</a>
+</div>
+<figcaption>Photo by <a href="https://unsplash.com/es/@pawel_czerwinski?utm_source=ghost&utm_medium=referral&utm_campaign=api-credit">Pawel Czerwinski</a> / <a href="https://unsplash.com/?utm_source=ghost&utm_medium=referral&utm_campaign=api-credit">Unsplash</a></figcaption>
+</figure>
+<div class="post-content gh-content kg-canvas">
+<p>Machine learning (ML) workloads require tremendous amounts of computing power. Of all the infrastructure components that scalable ML applications require, GPUs are the most critical. GPUs, with their parallel processing capabilities, have revolutionized domains like deep learning, scientific simulations, and high-performance computing. But not all ML workloads require the same amount of resources. Traditionally, ML scientists have had to pay for a full GPU regardless of whether they needed it.</p><p>In 2020, NVIDIA introduced Multi-Instance GPU (MIG) sharing. This feature partitions a GPU into multiple, smaller, fully isolated GPU instances. It is particularly beneficial for workloads that do not fully saturate the GPU’s compute capacity. It allows users to run multiple workloads in parallel on a single GPU to maximize resource utilization. This post shows how to use MIG on Amazon EKS.</p><h2 id="nvidia-multi-instance-gpu">NVIDIA Multi-Instance GPU</h2><p>MIG is a feature of NVIDIA GPUs based on NVIDIA Ampere architecture. It allows you to maximize the value of NVIDIA GPUs and reduce resource wastage. Using MIG, you can partition a GPU into smaller GPU instances, called MIG devices. Each MIG device is fully isolated with its own high-bandwidth memory, cache, and compute cores. You can create <em>slices</em> to control the amount of memory and number of compute resources per MIG device.</p><p>MIG gives you the ability to fine tune the amount of GPU resources your workloads get. This feature provides guaranteed quality of service (QoS) with deterministic latency and throughput to ensure workloads can safely share GPU resources without interference.</p><p>NVIDIA has extensive <a href="https://docs.nvidia.com/datacenter/tesla/mig-user-guide/?ref=blog.realvarez.com">documentation explaining the inner workings of MIG</a>, so I won’t repeat the information here.</p><h2 id="using-mig-with-kubernetes">Using MIG with Kubernetes</h2><p>Many customers I work with choose Kubernetes to operate their ML workloads. Kubernetes provides a powerful and scalable scheduling mechanism, making it easier to orchestrate workloads on a cluster of virtual machines. Kubernetes also has a vibrant community building tools like <a href="https://www.kubeflow.org/?ref=blog.realvarez.com">Kubeflow</a> that make it easier to build, deploy, and manage ML pipelines.</p><p>MIG on Kubernetes is still an underutilized feature due its complexity. NVIDIA documentation is partly to be blamed here. While NVIDIA's documentation explains how MIG works extensively (albeit with a lot of repetition), it is lacking when it comes to providing resources like tutorials and example for MIG deployments and configurations on Kubernetes. What makes matters worse is that to use MIG on Kubernetes, you have to install a bunch of resources such as the NVIDIA driver, NVIDIA container runtime, and device plugins.</p><p>Thankfully, <a href="https://github.com/NVIDIA/gpu-operator?ref=blog.realvarez.com">NVIDIA GPU Operator</a> automates the deployment, configuration, and monitoring GPU resources in Kubernetes. It simplifies installing the components necessary for using MIG on Kubernetes. Its key features are:</p><ul><li>Automatic GPU driver installation and management</li><li>Automatic GPU resource allocation and scheduling</li><li>Automatic GPU monitoring and alerting</li><li>Support for NVIDIA Container Runtime</li><li>Support for NVIDIA Multi-Instance GPU (MIG)</li></ul><figure class="kg-card kg-image-card kg-card-hascaption"><img src="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/05/image.png" class="kg-image" alt loading="lazy" width="2392" height="650"><figcaption>NVIDIA GPU Operator</figcaption></figure><p>The operator installs the following components:</p><ul><li><strong>NVIDIA device driver</strong></li><li><a href="https://github.com/kubernetes-sigs/node-feature-discovery?ref=blog.realvarez.com"><strong>Node Feature Discovery</strong></a>. Detects hardware features on the node</li><li><a href="https://github.com/NVIDIA/gpu-feature-discovery?ref=blog.realvarez.com"><strong>GPU Feature Discovery</strong></a>. Automatically generates labels for the set of GPUs available on a node</li><li><a href="https://github.com/NVIDIA/dcgm-exporter?ref=blog.realvarez.com"><strong>NVIDIA DCGM</strong></a> Exporter. Exposes GPU metrics exporter for <a href="https://prometheus.io/?ref=blog.realvarez.com">Prometheus</a> leveraging <a href="https://developer.nvidia.com/dcgm?ref=blog.realvarez.com">NVIDIA DCGM</a></li><li><a href="https://github.com/NVIDIA/k8s-device-plugin?ref=blog.realvarez.com"><strong>Device Plugin</strong></a>. Exposes the number of GPUs on each nodes of your cluster, keeps track of the health of your GPUs, and runs GPU enabled containers in your Kubernetes cluster</li><li><strong>Device Plugin Validator</strong>. Runs a series of validations via <code>InitContainers</code> for each component and writes out results under <code>/run/nvidia/validations</code></li><li><a href="https://github.com/NVIDIA/nvidia-container-toolkit?ref=blog.realvarez.com"><strong>NVIDIA Container Toolkit</strong></a></li><li><strong>NVIDIA CUDA Validator</strong></li><li><strong>NVIDIA Operator Validator</strong>.Validates driver, toolkit, CDA, and NVIDIA Device Plugin</li><li><a href="https://github.com/NVIDIA/mig-parted?ref=blog.realvarez.com"><strong>NVIDIA MIG Manager</strong></a>. <a href="https://github.com/NVIDIA/mig-parted/tree/main?ref=blog.realvarez.com">MIG Partition Editor</a> for NVIDIA GPUs in Kubernetes clusters</li></ul><figure class="kg-card kg-image-card"><img src="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/05/image-5.png" class="kg-image" alt loading="lazy" width="1950" height="1170"></figure><h2 id="nvidia-gpu-operator-on-amazon-eks">NVIDIA GPU Operator on Amazon EKS</h2><p>While NVIDIA GPU Operator makes it easy to use GPUs in Kubernetes, some of its components require newer versions of the Linux kernel and operating system. Amazon EKS provides a Linux AMI for GPU workloads that pre-installs NVIDIA drivers and container runtime. At the time of writing, this AMI provides Linux kernel 5.4. However, NVIDIA GPU Operator Helm Charts default are configured for Ubuntu or Centos 8. Therefore, making NVIDIA GPU Operator work on Amazon EKS is not as simple as executing:</p><pre><code>helm install gpu-operator nvidia/gpu-operator
+</code></pre><h2 id="walkthrough">Walkthrough</h2><p>Let’s start the walkthrough by installing NVIDIA GPU Operator. You’d need an EKS cluster with a node group made up of EC2 instances that come with NVIDIA GPUs (P4, P3, and G4 instances). Here’s an <a href="https://eksctl.io/?ref=blog.realvarez.com">eksctl</a> manifest if you’d like to create a new cluster for this walkthrough:</p><pre><code>apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: p4d-cluster
+  region: eu-west-1
+managedNodeGroups:
+  - name: demo-gpu-workers
+    instanceType: p4d.24xlarge
+    minSize: 1
+    desiredCapacity: 1
+    maxSize: 1
+    volumeSize: 200
+</code></pre><p>I am going to use a P4d.24XL instance for this demo. Each P4d.24XL EC2 instance has 8 NVIDIA A100 Tensor core GPUs. Each A100 GPU has 40GB memory. By default, you can only run one GPU workload per GPU with each pod getting a 40GB GPU memory slice. This means you are limited to running 8 pods per instance.</p><p><br>Using MIG, you can partition each GPU to run multiple pods per GPU. On a P4d.24XL node with 8 A100 GPUs, you can create 7 5GB A100 slices per GPU. As a result, you can run 7*8 = 56 pods concurrently. Alternatively, you can create 24 pods with 10GB slices, or 16 pods with 20GB slices, or 8 pods with 20GB slices.</p><p><br>Since the latest versions of the components that the operator installs are incompatible with the current version of Amazon EKS optimized accelerated Amazon Linux AMI, I have manually set the versions of incompatible components to a version that works with the AMI.</p><p><br>Install NVIDIA GPU Operator:</p><pre><code class="language-bash">helm repo add nvidia https://helm.ngc.nvidia.com/nvidia \
+   &amp;&amp; helm repo update
+
+helm upgrade gpuo \
+    nvidia/gpu-operator \
+    --set driver.enabled=true \
+    --set mig.strategy=mixed \
+    --set devicePlugin.enabled=true \
+    --set migManager.enabled=true \
+    --set migManager.WITH_REBOOT=true \
+    --set toolkit.version=v1.13.1-centos7 \
+    --set operator.defaultRuntime=containerd \
+    --set gfd.version=v0.8.0 \
+    --set devicePlugin.version=v0.13.0 \
+    --set migManager.default=all-balanced
+</code></pre><p>View the resources created by GPU Operator:</p><pre><code class="language-bash">$ kubectl get pods
+NAME                                                  READY   STATUS      RESTARTS   AGE
+gpu-feature-discovery-529vf                           1/1     Running     0          20m
+gpu-operator-9558bc48-z4wlh                           1/1     Running     0          3d20h
+gpuo-node-feature-discovery-master-7f8995bd8b-d6jdj   1/1     Running     0          3d20h
+gpuo-node-feature-discovery-worker-wbtxc              1/1     Running     0          20m
+nvidia-container-toolkit-daemonset-lmpz8              1/1     Running     0          20m
+nvidia-cuda-validator-bxmhj                           0/1     Completed   1          19m
+nvidia-dcgm-exporter-v8p8f                            1/1     Running     0          20m
+nvidia-device-plugin-daemonset-7ftt4                  1/1     Running     0          20m
+nvidia-device-plugin-validator-pf6kk                  0/1     Completed   0          18m
+nvidia-mig-manager-82772                              1/1     Running     0          18m
+nvidia-operator-validator-5fh59                       1/1     Running     0          20m
+</code></pre><p>GPU Feature Discovery adds labels to the node that help Kubernetes schedule workloads that require a GPU. You can see the label by describing the node:</p><pre><code>$ kubectl describe node 
+...
+Allocatable:
+  attachable-volumes-aws-ebs:  39
+  cpu:                         95690m
+  ephemeral-storage:           18242267924
+  hugepages-1Gi:               0
+  hugepages-2Mi:               0
+  memory:                      1167644256Ki
+  nvidia.com/gpu:              8
+  pods:                        250
+...
+</code></pre><p>Pods can request a GPU by specifying GPU in resources. Here's a sample pod manifest:</p><pre><code>kind: Pod
+metadata:
+  name: dcgmproftester-1
+spec:
+  restartPolicy: "Never"
+  containers:
+  - name: dcgmproftester11
+    image: nvidia/samples:dcgmproftester-2.0.10-cuda11.0-ubuntu18.04
+    args: ["--no-dcgm-validation", "-t 1004", "-d 30"]  
+    resources:
+      limits:
+         nvidia.com/gpu: 1    
+    securityContext:
+      capabilities:
+        add: ["SYS_ADMIN"]  
+
+</code></pre><p>We won't create a pod that uses a full GPU because that will work out of the box. Instead, we'll create pods that use partial GPUs.</p><h3 id="creating-mig-partitions-on-kubernetes">Creating MIG partitions on Kubernetes</h3><p>NVIDIA provides two strategies for exposing MIG partitioned devices on a Kubernetes node. In <strong>single strategy</strong>, a node only exposes a single type of MIG devices across all GPUs. Whereas, <strong>Mixed strategy</strong> allows you to create multiple different sized MIG devices across all of a node's GPUs.</p><figure class="kg-card kg-image-card kg-card-hascaption"><img src="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/05/image-1.png" class="kg-image" alt loading="lazy" width="960" height="175"><figcaption>MIG device naming</figcaption></figure><p>Using MIG single strategy, you can create similar sized MIG devices. On a P4d.24XL, you can create  56 1g.5gb slices, or 24 2g.10gb slices, or 16 3g.20gb slices, or a 1 4g.40gb or 7g.40gb slice.</p><p>Mixed strategy will allow you to create a few 1g.5gb along with a few 2g.10gb and 3g.20gb slices. It is useful when your cluster has workloads with varying GPU resource requirements.</p><h3 id="create-mig-devices-with-single-strategy">Create MIG devices with single strategy</h3><p>Let's create a single strategy and see how to use it with Kubernetes. NVIDIA GPU Operator makes it easy to create MIG partitions. To configure partitions, all you have to do is label the node. MIG manager runs as daemonset on all nodes. When it detects node labels, it will use <a href="https://github.com/NVIDIA/mig-parted?ref=blog.realvarez.com"><code>mig-parted</code></a> to create MIG devices.</p><p>Label a node to create 1g.5gb MIG devices across all GPUs (replace <code>$NODE</code> with a node in your cluster):</p><pre><code>kubectl label nodes $NODE nvidia.com/mig.config=all-1g.5gb --overwrite
+</code></pre><p>Two things will happen once you label the node this way. First, the node will no longer advertise any full GPUs and the <code>nvidia.com/gpu</code> label will be set to 0. Second,  your node will advertise 56 1g.5gb MIG devices.</p><pre><code>$ kubectl describe node $NODE
+...
+  nvidia.com/gpu:              0
+  nvidia.com/mig-1g.5gb:       56
+...
+</code></pre><p><em>Please note that it may take a few seconds for the change to take effect. The node will have a label <code>nvidia.com/mig.config.state=pending</code> when the change is still in progress. Once MIG manager completes partitioning, the label will be set to <code>nvidia.com/mig.config.state=success</code></em>.</p><p><br>We can now create a deployment that uses MIG devices.</p><p><br>Create a deployment:</p><pre><code>cat &lt;&lt; EOF &gt; mig-1g-5gb-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mig1.5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mig1-5
+  template:
+    metadata:
+      labels:
+        app: mig1-5
+    spec:
+      containers:
+      - name: vectoradd
+        image: nvidia/cuda:8.0-runtime
+        command: ["/bin/sh", "-c"]
+        args: ["nvidia-smi &amp;&amp; tail -f /dev/null"]
+        resources:
+          limits:
+            nvidia.com/mig-1g.5gb: 1
+EOF
+</code></pre><p>You should now have a pod running that consumes 1x 1g.5gb MIG device.</p><pre><code>$ kubectl get deployments.apps mig1.5
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+mig1.5   1/1     1            1           1h
+</code></pre><p>Let's scale the deployment to 100 replicas. Only 56 pods will get created because the node can only accommodate 56 1g.5gb MIG devices (8 GPUs * 7 MIG slices per GPU) .</p><p>Scale the deployment:</p><pre><code>kubectl scale deployment mig1.5 --replicas=100
+</code></pre><p>Notice that only 56 pods become available:</p><pre><code>kubectl get deployments.apps mig1.5
+NAME     READY    UP-TO-DATE   AVAILABLE   AGE
+mig1.5   56/100   100          56          1h
+</code></pre><p>Exec into one of the containers and run <code>nvidia-smi</code> to view allocated GPU resources.</p><pre><code>kubectl exec &lt;YOUR MIG1.5 POD&gt; -ti -- nvidia-smi
+</code></pre><figure class="kg-card kg-image-card"><img src="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/05/image-2.png" class="kg-image" alt loading="lazy" width="1920" height="1170"></figure><p>As you can see, this pod only has 5gb memory.</p><p>Let's scale the deployment down to 0:</p><pre><code>kubectl scale deployment mig1.5 --replicas=0
+</code></pre><h3 id="create-mig-devices-with-mixed-strategy">Create MIG devices with mixed strategy</h3><p>In single strategy, all MIG devices were 1g.5gb devices. Now let's slice the GPUs so that each node supports multiple MIG device configurations. MIG manager uses a configmap to store MIG configuration. When we labeled the node with <code>all-1g.5gb</code>, MIG partition editor uses the configmap to determine the partition scheme.</p><pre><code>$ kubectl describe configmaps default-mig-parted-config
+...
+
+  all-1g.5gb:
+    - devices: all
+      mig-enabled: true
+      mig-devices:
+        "1g.5gb": 7
+
+...
+</code></pre><p>This configmap also includes other profiles like <code>all-balanced</code>. The <code>all-balanced</code> profile creates 2x 1g.10gb, 1x 2g.20gb, and 1x 3g.40gb MIG devices per GPU.  You can create your own custom profile by editing the configmap.</p><p><code>all-balanced</code> MIG profile:</p><pre><code>$ kubectl describe configmaps default-mig-parted-config
+
+...
+  all-balanced:
+    - device-filter: ["0x20B010DE", "0x20B110DE", "0x20F110DE", "0x20F610DE"]
+      devices: all
+      mig-enabled: true
+      mig-devices:
+        "1g.5gb": 2
+        "2g.10gb": 1
+        "3g.20gb": 1
+...
+</code></pre><p>Let's label the node to use <code>all-balanced</code> MIG profile:</p><pre><code>kubectl label nodes $NODE nvidia.com/mig.config=all-balanced --overwrite
+</code></pre><p>Once the node has <code>nvidia.com/mig.config.state=success</code> label, describe the node and you'll see multiple MIG devices listed in the node:</p><pre><code>$ kubectl describe node $NODE
+
+...
+
+  nvidia.com/mig-1g.5gb:       16
+  nvidia.com/mig-2g.10gb:      8
+  nvidia.com/mig-3g.20gb:      8
+
+...
+</code></pre><p>With <code>all-balanced</code> profile, this P4d.24XL node can run 16x 1g.5gb, 8x 2g.20gb, and 8x 3g.20gb pods.</p><p>Let's test this out by creating two additional deployments. One with pods that use one 2g.10gb MIG device and another using 3g.10gb MIG device.</p><p>Create deployments:</p><pre><code>cat &lt;&lt; EOF &gt; mig-2g-10gb-and-3g.20gb-deployments.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mig2-10
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mig2-10
+  template:
+    metadata:
+      labels:
+        app: mig2-10
+    spec:
+      containers:
+      - name: vectoradd
+        image: nvidia/cuda:8.0-runtime
+        command: ["/bin/sh", "-c"]
+        args: ["nvidia-smi &amp;&amp; tail -f /dev/null"]
+        resources:
+          limits:
+            nvidia.com/mig-2g.10gb: 1
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mig3-20
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mig3-20
+  template:
+    metadata:
+      labels:
+        app: mig3-20
+    spec:
+      containers:
+      - name: vectoradd
+        image: nvidia/cuda:8.0-runtime
+        command: ["/bin/sh", "-c"]
+        args: ["nvidia-smi &amp;&amp; tail -f /dev/null"]
+        resources:
+          limits:
+            nvidia.com/mig-3g.20gb: 1
+EOF
+</code></pre><p>Once pods from these deployments are running, scale all three deployments to 20 replicas:</p><pre><code>kubectl scale deployments mig1.5 mig2-10 mig3-20 --replicas=20
+</code></pre><p>Let's see how many of these replicas start running:</p><pre><code>kubectl get deployments
+</code></pre><figure class="kg-card kg-image-card"><img src="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/05/image-3.png" class="kg-image" alt loading="lazy" width="1876" height="212"></figure><p>Let's see how much GPU memory a 3g.20gb pod receives:</p><pre><code>kubectl exec mig3-20-&lt;pod-id&gt; -ti -- nvidia-smi
+</code></pre><p>As expected, this pod has 20GB GPU memory allocated.</p><figure class="kg-card kg-image-card kg-card-hascaption"><img src="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/05/image-4.png" class="kg-image" alt loading="lazy" width="1950" height="1170"><figcaption>GPU resources in a pod with 3g.20gb MIG device</figcaption></figure><h3 id="cleanup">Cleanup</h3><p>Delete the cluster and the node group:</p><pre><code>eksctl delete cluster &lt;CLUSTER_NAME&gt;
+</code></pre><h2 id="conclusion">Conclusion</h2><p>This post shows how to partition GPUs using NVIDIA Multi-Instance GPU and using it with Amazon EKS. Using MIG on Kubernetes can be complex, but NVIDIA GPU Operator simplifies the process of installing MIG dependencies and partitioning.</p><p>By leveraging the capabilities of MIG and the automation provided by the NVIDIA GPU Operator, ML scientists can optimize their GPU usage, run more workloads per GPU, and achieve better resource utilization in their scalable ML applications. With the ability to run multiple applications per GPU and tailor the allocation of resources, you can optimize your ML workloads to achieve higher scalability and performance in your applications.</p><h2 id="resources">Resources</h2><ul><li><a href="https://docs.nvidia.com/datacenter/cloud-native/mig/mig.html?ref=blog.realvarez.com">Multi-Instance GPU — NVIDIA Cloud Native Technologies documentation</a></li><li><a href="https://docs.nvidia.com/datacenter/tesla/mig-user-guide/?ref=blog.realvarez.com">NVIDIA Multi-Instance GPU User Guide :: NVIDIA Tesla Documentation</a></li><li><a href="https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/overview.html?ref=blog.realvarez.com">NVIDIA GPU Operator Overview — NVIDIA Cloud Native Technologies documentation</a></li><li><a href="https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/gpu-operator-mig.html?ref=blog.realvarez.com">GPU Operator with MIG — NVIDIA Cloud Native Technologies documentation</a></li><li><a href="https://docs.google.com/document/d/1mdgMQ8g7WmaI_XVVRrCvHPFPOMCm5LQD5JefgAh6N8g/edit?ref=blog.realvarez.com">[External] Supporting MIG in Kubernetes - Google Docs</a></li><li><a href="https://docs.google.com/document/d/1Dxx5MwG_GiBeKOuMNwv4QbO8OqA7XFdzn7fzzI7AQDg/edit?ref=blog.realvarez.com">[External] Challenges Supporting MIG in Kubernetes - Google Docs</a></li><li><a href="https://docs.google.com/document/d/1bshSIcWNYRZGfywgwRHa07C0qRyOYKxWYxClbeJM-WM/edit?ref=blog.realvarez.com">[External] Steps to Enable MIG Support in Kubernetes - Google Docs</a></li></ul>
+</div>
+<div class="container medium">
+<div class="share u-hover-wrapper">
+<a class="share-item share-facebook u-hover-item" href="https://www.facebook.com/sharer.php?u=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/" target="_blank" rel="noopener"><i class="icon icon-facebook"></i></a>
+<a class="share-item share-twitter u-hover-item" href="https://twitter.com/intent/tweet?url=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/&text=Run%20more%20pods%20per%20GPU%20with%20NVIDIA%20Multi-Instance%20GPU" target="_blank" rel="noopener"><i class="icon icon-twitter"></i></a>
+<a class="share-item share-pinterest u-hover-item" href="https://pinterest.com/pin/create/button/?url=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/&media=&description=Run%20more%20pods%20per%20GPU%20with%20NVIDIA%20Multi-Instance%20GPU" target="_blank" rel="noopener" data-pin-do="none"><i class="icon icon-pinterest"></i></a>
+<a class="share-item share-linkedin u-hover-item" href="https://www.linkedin.com/shareArticle?mini=true&url=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/&title=Run%20more%20pods%20per%20GPU%20with%20NVIDIA%20Multi-Instance%20GPU" target="_blank" rel="noopener"><i class="icon icon-linkedin"></i></a>
+<a class="share-item share-reddit u-hover-item" href="https://reddit.com/submit?url=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/&title=Run%20more%20pods%20per%20GPU%20with%20NVIDIA%20Multi-Instance%20GPU" target="_blank" rel="noopener"><i class="icon icon-reddit"></i></a>
+<a class="share-item share-tumblr u-hover-item" href="https://www.tumblr.com/widgets/share/tool?canonicalUrl=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/&title=Run%20more%20pods%20per%20GPU%20with%20NVIDIA%20Multi-Instance%20GPU" target="_blank" rel="noopener"><i class="icon icon-tumblr"></i></a>
+<a class="share-item share-vk u-hover-item" href="http://vk.com/share.php?url=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/&title=Run%20more%20pods%20per%20GPU%20with%20NVIDIA%20Multi-Instance%20GPU" target="_blank" rel="noopener"><i class="icon icon-vk"></i></a>
+<a class="share-item share-pocket u-hover-item" href="https://getpocket.com/edit?url=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/" target="_blank" rel="noopener"><i class="icon icon-pocket"></i></a>
+<a class="share-item share-telegram u-hover-item" href="https://t.me/share/url?url=https://realvz.github.io/blog/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/&text=Run%20more%20pods%20per%20GPU%20with%20NVIDIA%20Multi-Instance%20GPU" target="_blank" rel="noopener"><i class="icon icon-telegram"></i></a>
+</div> </div>
+</article>
+<div class="navigation container medium">
+<div class="navigation-item navigation-previous">
+<a class="navigation-item-link button-arrow button-arrow-left" href="/use-containerd-to-handle-k8s-gcr-io-deprecation/">
+<i class="button-arrow-icon icon icon-arrow-left"></i> Previous Post
+</a>
+</div>
+<div class="navigation-item navigation-next">
+<a class="navigation-item-link button-arrow button-arrow-right" href="/cert-manager-encrypt-kubernetes-service-to-service-communication-with-self-signed-certificates/">
+Next Post <i class="button-arrow-icon icon icon-arrow-right"></i>
+</a>
+</div>
+</div> </main>
+</div>
+</div>
+<footer class="site-footer container large">
+<div class="copyright">
+Powered by <a href="https://ghost.org/" target="_blank" rel="noopener">Ghost</a>
+</div>
+<nav class="footer-nav">
+<ul class="nav-list u-plain-list">
+<li class="menu-item menu-item-sign-up"><a class="menu-item-link" href="https://realvz.github.io/blog/#/portal/">Sign up</a></li>
+</ul>
+</nav>
+<div class="footer-social">
+<a class="footer-social-item footer-social-item-twitter" href="https://twitter.com/realz" target="_blank" rel="noopener" aria-label="Twitter">
+<i class="icon icon-twitter"></i>
+</a>
+<a class="footer-social-item footer-social-item-rss" href="https://feedly.com/i/subscription/feed/https://realvz.github.io/blog/rss/" target="_blank" rel="noopener" aria-label="RSS">
+<i class="icon icon-rss"></i>
+</a>
+</div>
+</footer> </div>
+<div class="dimmer"></div>
+<div class="off-canvas">
+<div class="canvas-close">
+<i class="canvas-icon icon icon-window-close"></i>
+</div>
+<div class="mobile-menu"></div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous">
+    </script>
+<script src="/assets/built/main.min.js?v=ce0a9a97d4"></script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connecting Kubernetes clusters across VPCs</title>
+<link rel="stylesheet" href="/assets/built/screen.css?v=ce0a9a97d4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Mulish:ital,wght@0,400;0,700;0,800;1,400;1,700&display=swap">
+<script>
+        if (localStorage.getItem('alto_dark') == 'true') {
+            document.documentElement.classList.add('dark-mode');
+        }
+    </script>
+<meta name="description" content="How do you connect your VPCs?">
+<link rel="icon" href="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/04/code-branch.png" type="image/png">
+<link rel="canonical" href="https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/">
+<meta name="referrer" content="no-referrer-when-downgrade">
+<meta property="og:site_name" content="Re Alvarez Parmar&#x27;s Blog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Connecting Kubernetes clusters across VPCs">
+<meta property="og:description" content="How do you connect your VPCs?">
+<meta property="og:url" content="https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/">
+<meta property="og:image" content="https://images.unsplash.com/photo-1597733336794-12d05021d510?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;2000content/images/size/w1200">
+<meta property="article:published_time" content="2022-04-11T07:26:05.000Z">
+<meta property="article:modified_time" content="2022-04-18T22:44:44.000Z">
+<meta property="article:tag" content="Cloud">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="VPC">
+<meta property="article:tag" content="AWS">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Connecting Kubernetes clusters across VPCs">
+<meta name="twitter:description" content="How do you connect your VPCs?">
+<meta name="twitter:url" content="https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1597733336794-12d05021d510?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;2000content/images/size/w1200">
+<meta name="twitter:label1" content="Written by">
+<meta name="twitter:data1" content="Re Alvarez Parmar">
+<meta name="twitter:label2" content="Filed under">
+<meta name="twitter:data2" content="Cloud, Kubernetes, VPC, AWS">
+<meta name="twitter:site" content="@realz">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="900">
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Re Alvarez Parmar&#x27;s Blog",
+        "url": "https://realvz.github.io/blog/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/04/code-branch.png",
+            "width": 60,
+            "height": 60
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Re Alvarez Parmar",
+        "image": {
+            "@type": "ImageObject",
+            "url": "https://www.gravatar.com/avatar/2ea5788958b69e3c318e7b5c1562a2b4?s=250&r=x&d=mp",
+            "width": 250,
+            "height": 250
+        },
+        "url": "https://realvz.github.io/blog/author/re/",
+        "sameAs": []
+    },
+    "headline": "Connecting Kubernetes clusters across VPCs",
+    "url": "https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/",
+    "datePublished": "2022-04-11T07:26:05.000Z",
+    "dateModified": "2022-04-18T22:44:44.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "https://images.unsplash.com/photo-1597733336794-12d05021d510?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&ixlib=rb-1.2.1&q=80&w=2000content/images/size/w1200",
+        "width": 1200,
+        "height": 900
+    },
+    "keywords": "Cloud, Kubernetes, VPC, AWS",
+    "description": "How do you connect your VPCs?",
+    "mainEntityOfPage": "https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/"
+}
+    </script>
+<meta name="generator" content="Ghost 5.79">
+<link rel="alternate" type="application/rss+xml" title="Re Alvarez Parmar&#x27;s Blog" href="https://realvz.github.io/blog/rss/">
+<script defer src="https://cdn.jsdelivr.net/ghost/portal@~2.37/umd/portal.min.js" data-i18n="false" data-ghost="https://realvz.github.io/blog/" data-key="875679d7145ae8b3c4db5168c2" data-api="https://realvz.github.io/blog/ghost/api/content/" crossorigin="anonymous"></script><style id="gh-members-styles">.gh-post-upgrade-cta-content,
+.gh-post-upgrade-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    text-align: center;
+    width: 100%;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.gh-post-upgrade-cta-content {
+    border-radius: 8px;
+    padding: 40px 4vw;
+}
+
+.gh-post-upgrade-cta h2 {
+    color: #ffffff;
+    font-size: 28px;
+    letter-spacing: -0.2px;
+    margin: 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta p {
+    margin: 20px 0 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta small {
+    font-size: 16px;
+    letter-spacing: -0.2px;
+}
+
+.gh-post-upgrade-cta a {
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 500;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a:hover {
+    color: #ffffff;
+    opacity: 0.8;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a.gh-btn {
+    display: block;
+    background: #ffffff;
+    text-decoration: none;
+    margin: 28px 0 0;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.gh-post-upgrade-cta a.gh-btn:hover {
+    opacity: 0.92;
+}</style>
+<script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/sodo-search.min.js" data-key="875679d7145ae8b3c4db5168c2" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/main.css" data-sodo-search="https://realvz.github.io/blog/" crossorigin="anonymous"></script>
+<link href="https://realvz.github.io/blog/webmentions/receive/" rel="webmention">
+<script defer src="/public/cards.min.js?v=ce0a9a97d4"></script>
+<link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=ce0a9a97d4">
+<script defer src="/public/member-attribution.min.js?v=ce0a9a97d4"></script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B5XRB3YVTR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B5XRB3YVTR');
+</script><style>:root {--ghost-accent-color: #3a88fe;}</style>
+</head>
+<body class="post-template tag-cloud tag-kubernetes tag-vpc tag-aws has-serif-title has-serif-body">
+<div class="site">
+<header class="site-header container">
+<div class="navbar">
+<div class="navbar-left">
+<div class="burger hidden-lg hidden-xl"></div>
+<a class="logo" href="https://realvz.github.io/blog">
+<span class="logo-text">Re Alvarez Parmar&#x27;s Blog</span>
+</a> <div class="sep hidden-xs hidden-sm hidden-sm"></div>
+<nav class="main-menu hidden-xs hidden-sm hidden-md">
+<ul class="nav-list u-plain-list">
+<li class="menu-item menu-item-home"><a class="menu-item-link" href="https://realvarez.com">Home</a></li>
+<li class="menu-item menu-item-about"><a class="menu-item-link" href="https://realvz.github.io/blog/about/">About</a></li>
+</ul>
+</nav>
+</div>
+<div class="navbar-right">
+<div class="toggle-track">
+<div class="toggle-moon"><i class="icon icon-brightness-2"></i></div>
+<div class="toggle-sun"><i class="icon icon-white-balance-sunny"></i></div>
+<div class="toggle-thumb"></div>
+</div>
+</div>
+</div>
+</header> <div class="site-content">
+<div class="content-area">
+<main class="site-main">
+<article class="post tag-cloud tag-kubernetes tag-vpc tag-aws featured single-post">
+<header class="post-header big-title container medium">
+<h1 class="post-title">Connecting Kubernetes clusters across VPCs</h1>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2022-04-11">Apr 11, 2022</time>
+</span>
+<span class="post-meta-item post-meta-length">
+6 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-cloud" href="/tag/cloud/" title="Cloud">Cloud</a><a class="post-tag post-tag-kubernetes" href="/tag/kubernetes/" title="Kubernetes">Kubernetes</a><a class="post-tag post-tag-vpc" href="/tag/vpc/" title="VPC">VPC</a><a class="post-tag post-tag-aws" href="/tag/aws/" title="AWS">AWS</a>
+</span>
+</div>
+</header> <figure class="post-media container large">
+<div class="u-placeholder horizontal">
+<a class="post-image-link" href="/connecting-kubernetes-clusters-across-vpcs/">
+<img class="post-image lazyload u-object-fit" data-srcset="https://images.unsplash.com/photo-1597733336794-12d05021d510?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;400 400w, https://images.unsplash.com/photo-1597733336794-12d05021d510?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;750 750w, https://images.unsplash.com/photo-1597733336794-12d05021d510?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;960 960w, https://images.unsplash.com/photo-1597733336794-12d05021d510?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;1140 1140w, https://images.unsplash.com/photo-1597733336794-12d05021d510?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;1920 1920w" data-sizes="auto" src="https://images.unsplash.com/photo-1597733336794-12d05021d510?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGZpYmVyJTIwb3B0aWN8ZW58MHx8fHwxNjQ5NjYyMDE1&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;960" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Connecting Kubernetes clusters across VPCs">
+</a>
+</div>
+<figcaption>Photo by <a href="https://unsplash.com/@jjying?utm_source=ghost&utm_medium=referral&utm_campaign=api-credit">JJ Ying</a> / <a href="https://unsplash.com/?utm_source=ghost&utm_medium=referral&utm_campaign=api-credit">Unsplash</a></figcaption>
+</figure>
+<div class="post-content gh-content kg-canvas">
+<h1 id="connectingkubernetesclustersacrossvpcs">Connecting Kubernetes clusters across VPCs</h1>
+<p>A few months ago, someone asked me the best way to <strong>connect services running in different Amazon EKS (EKS) clusters running in two different VPCs</strong>. Thinking about connecting network resources across AWS VPCs reminded me of the early days of AWS when you needed to implement a <a href="https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/transit-vpc-solution.html?ref=blog.realvarez.com">complex hub and spoke architecture </a>to connect Amazon Virtual Private Networking (VPC). Thankfully, AWS has newer services that simplify VPC interconnectivity.</p>
+<p>AWS customers can connect networked resources in different AWS accounts using VPC peering, AWS Transit Gateway, VPC sharing, AWS PrivateLink, or 3rd-party solutions.</p>
+<p>Given that there are so many options, I wasn’t sure which solution to recommend. The question I was posed needed a better understanding of AWS networking services. Here’s the research I did to understand the most optimal approach for connecting Kubernetes hosted services running in separate VPCs.</p>
+<p><em>Note: I am not an AWS networking expert. This post was distilled from AWS documentation and this AWS</em> <a href="https://d1.awsstatic.com/whitepapers/building-a-scalable-and-secure-multi-vpc-aws-network-infrastructure.pdf?ref=blog.realvarez.com"><em>whitepaper</em></a><em>.</em></p>
+<h2 id="symmetricandasymmetricflow">Symmetric and Asymmetric flow</h2>
+<p>Before picking a solution to interconnect services across different VPCs, you must consider your data connection requirements. There are two types of connectivity patterns between a set of network resources.</p>
+<p><img src="https://res.craft.do/user/full/9d54cc03-adfe-f72f-3389-565eb7356d1d/doc/E750C457-EBD6-4BC9-B64B-82503E319F6A/26D185BC-AFBB-490F-9A24-80F677B36EF4_2/t8Hbez8lyX1cCCxTTCM6wF43cfHyM0X9KJh7YwMBgoMz/Image.png" alt="Image.png" loading="lazy"></p>
+<p>In the first scenario, <em>a client</em> initiates a connection with the <em>server</em> to send requests, but the server never initiates a connection with the client. A typical example will be a traditional three-tier web app that stores data in a database. In such a scenario, the backend connects to the database. The database never establishes a connection with the backend. I will call this type of connection flow as asymmetric flow in this blog.</p>
+<p>Symmetric flow is the opposite. In this data connectivity pattern, either side (client or server) can initiate a connection.</p>
+<p><img src="https://res.craft.do/user/full/9d54cc03-adfe-f72f-3389-565eb7356d1d/doc/E750C457-EBD6-4BC9-B64B-82503E319F6A/ED6FF915-D47F-42E7-A618-590BED86B0E8_2/J0TrtZ5Tq6mYVcwIidOYTMzSPr8jW2k1wsdve1vlLg8z/Image.jpeg" alt="Image.jpeg" loading="lazy"></p>
+<p>Customers looking to connect Kubernetes-hosted applications running in different AWS accounts will have to start by determining the data connection patterns their applications and services will use.</p>
+<h2 id="connectingserviceshostedindifferentawsaccounts">Connecting services hosted in different AWS accounts</h2>
+<p>The type of connectivity your services require influences how you can connect services in different VPCs.</p>
+<p>When interconnecting private services that need symmetric flow, any service has to be able to initiate a connection with another service. Service discovery is a prerequisite for connectivity. Services have to know how to connect to downstream services. Once that problem is resolved (using DNS, or <a href="https://www.consul.io/?ref=blog.realvarez.com">Consul</a> etc.), there are two primary ways to interconnect services:</p>
+<ol>
+<li><strong>VPC Peering (including TGW) or VPC Sharing</strong></li>
+<li><strong>AWS PrivateLink</strong></li>
+</ol>
+<p>The key difference between the two approaches is that once VPC peering or VPC sharing is set up, network resources (EC2 instances, pods, containers) in the VPCs can interconnect by default.</p>
+<p>AWS PrivateLink provides secure access to services hosted in other VPCs without peering or sharing VPCs. You do this by configuring an interface endpoint to access the service in the other VPC. Because access control is more fine-grained, you may have to create an interface endpoint powered by PrivateLink for each Kubernetes hosted service that uses a different NLB.</p>
+<p>In the fullness of time, most large enterprises will (many already do) use a combination of AWS networking services depending on the use case. In the next section, we review AWS network services and determine the scenarios in which they are a good fit.</p>
+<h2 id="vpcpeering">🛟VPC Peering</h2>
+<p>When services have to consume other services running in different VPCs, requiring symmetric flow, VPC peering is the easiest way to provide interconnectivity.</p>
+<p>You can connect the VPCs in which your EKS clusters reside as long as you had the foresight and luxury of pre-planning VPC CIDRs in advance (notice the intentional redundancy 🙂), and don’t have too many VPCs to interconnect or require <a href="https://docs.aws.amazon.com/vpc/latest/peering/invalid-peering-configurations.html?ref=blog.realvarez.com">transitive routing</a>.</p>
+<p><img src="https://res.craft.do/user/full/9d54cc03-adfe-f72f-3389-565eb7356d1d/doc/25063015-13A1-4BB7-AC8F-051C459295D9/39E98556-BFFC-4525-9B76-2B713E343C7A_2/onLV8rNs9U51ivwwKcdi6iz41iXA4NqptvEuDSMpHvgz/Image.png" alt="Image.png" loading="lazy"></p>
+<p>VPC peering is the <strong>preferred method to connect VPCs when there are less than 10 VPCs</strong> (<a href="https://d1.awsstatic.com/whitepapers/building-a-scalable-and-secure-multi-vpc-aws-network-infrastructure.pdf?ref=blog.realvarez.com">source</a>). However, most enterprises have complicated, extensive networks and sub-networks, which inevitably leads to hundreds of VPCs. Interconnecting them using VPC peering is a difficulty that AWS Transit Gateway intends to solve.</p>
+<h2 id="awstransitgateway">🚉 AWS Transit Gateway</h2>
+<p>AWS Transit Gateway (TGW) is another option to connect VPCs wherever services need to interconnect with symmetric flow.</p>
+<p>TGW is designed to simplify creating and managing multiple VPC peering connections at scale. It can act as the central router for large-scale, enterprise-grade, globally-distributed networks.</p>
+<p><img src="https://res.craft.do/user/full/9d54cc03-adfe-f72f-3389-565eb7356d1d/doc/38C9E4B8-323B-4856-9E79-E3EE1640D56E/7993907D-6527-40B4-BF67-B1C61956DD72_2/1xOZPjeTz8BzcHJKya1x7nGLk0rferbjZx7jkZ4viRMz/Image.jpeg" alt="Image.jpeg" loading="lazy"></p>
+<p>TGW is the default choice for EKS users that have to connect their clusters with more than 10 VPCs and need symmetric flow.</p>
+<h3 id="aretherereasonsfornotusingtgw">Are there reasons for not using TGW?</h3>
+<p>The good ole’ VPC peering still has some tricks up its sleeve that TGW hasn’t mastered yet. Here are a few reasons TGW may not be the right choice for you:</p>
+<ul>
+<li><strong>Lower cost</strong> — With VPC peering you only pay for data transfer charges. Transit Gateway has an hourly charge per attachment in addition to the data transfer fees. For example, in US-East-1:</li>
+</ul>
+<p><img src="https://res.craft.do/user/full/9d54cc03-adfe-f72f-3389-565eb7356d1d/doc/38C9E4B8-323B-4856-9E79-E3EE1640D56E/F2F068F9-BEAD-480F-BC56-EEA9AC20C60A_2/BvP5LauYje7j6GXlnqYCNkGWwn1erFhidpxQyu3DpC8z/Image.jpeg" alt="Image.jpeg" loading="lazy"></p>
+<ul>
+<li><strong>No bandwidth limits</strong> - With Transit Gateway, Maximum bandwidth (burst) per Availability Zone per VPC connection is 50 Gbps. VPC peering has no aggregate bandwidth. Individual instance network performance limits and flow limits (10 Gbps within a placement group and 5 Gbps otherwise) apply to both options. Only VPC peering supports placement groups.</li>
+<li><strong>Latency -</strong> Unlike VPC peering, Transit Gateway is an additional hop between VPCs.</li>
+<li><strong>Security Groups compatibility -</strong> Security groups referencing works with intra-Region VPC peering.</li>
+</ul>
+<p>TGW (or VPC Peering) enables inter-region VPC peering, which is helpful when your EKS clusters reside in different AWS regions.</p>
+<h3 id="amazonvpcsharing">🫱🏽‍🫲🏼Amazon VPC Sharing</h3>
+<p>Here’s a third way to provide symmetric flow: share a VPC with multiple AWS accounts.</p>
+<p><a href="https://aws.amazon.com/ram/?ref=blog.realvarez.com">AWS Resource Access Manager</a> (RAM) allows you to share VPCs (among other things) with other AWS accounts within your AWS Organization.</p>
+<p>RAM allows network administrators to create and manage VPCs centrally. Shared VPC enables network resources in different AWS accounts to communicate seamlessly as if they were on the same VPC and account. You can still control traffic using security groups and network ACLs.</p>
+<blockquote>
+<p>You can share your VPCs to leverage the implicit routing within a VPC for applications that require a high degree of interconnectivity and are within the same trust boundaries. This reduces the number of VPCs that you create and manage while using separate accounts for billing and access control.</p>
+</blockquote>
+<p><strong>VPC sharing benefits:</strong></p>
+<ul>
+<li>Simplified design — no complexity around inter-VPC connectivity</li>
+<li>Fewer managed VPCs</li>
+<li>Segregation of duties between network teams and application owners</li>
+<li>Better IPv4 address utilization</li>
+<li>Lower costs — no data transfer charges between instances belonging to different accounts within the same Availability Zone</li>
+</ul>
+<p>According to the whitepaper, customers can use VPC sharing in conjunction with TGW to optimize for cost and performance. VPC sharing has a few <a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpc-sharing.html?ref=blog.realvarez.com#vpc-share-limitations">limitations</a>, make sure you’re accounting for them in your design.</p>
+<h3 id="awsprivatelink">🎯AWS PrivateLink</h3>
+<p>Are you itching to know the options if you need asymmetric flow connectivity? No. Let me tell you anyway. 😄</p>
+<p>AWS PrivateLink provides private IP connectivity between VPCs so that clients can connect with services hosted in other VPCs.</p>
+<p><img src="https://res.craft.do/user/full/9d54cc03-adfe-f72f-3389-565eb7356d1d/doc/E750C457-EBD6-4BC9-B64B-82503E319F6A/70E8E1B1-8E55-482C-A5A5-435FA3556D0E_2/nVchuZuBuchYYExghfQZ08YGb1H0o5dDpPpTqgcjA80z/Image.png" alt="Image.png" loading="lazy"></p>
+<p>The key benefit over VPC sharing or peering is that PrivateLink connects services even when they run in different VPCs with overlapping CIDRs. It is also simpler to set up as it doesn’t require changes to route tables, subnets, or TGWs.</p>
+<blockquote>
+<p>The AWS Prescriptive Guidance has a guide for using <a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/patterns/access-container-applications-privately-on-amazon-eks-using-aws-privatelink-and-a-network-load-balancer.html?ref=blog.realvarez.com">PrivateLink and NLB with EKS</a>.</p>
+</blockquote>
+<h3 id="symmetricflowwithprivatelink">Symmetric flow with PrivateLink</h3>
+<p>If you choose to interconnect services using PrivateLink, you can still provide support for symmetric flow You’d have to add another PrivateLink to support connections originating from the opposite end.</p>
+<p><img src="https://res.craft.do/user/full/9d54cc03-adfe-f72f-3389-565eb7356d1d/doc/E750C457-EBD6-4BC9-B64B-82503E319F6A/80E31C46-F8E3-4A00-996F-DEA674B4B1F0_2/Ouq2THBcarrvUdy9l4T3IkYLaFs2hQVy9MeQa7CyNUcz/Image.jpeg" alt="Image.jpeg" loading="lazy"></p>
+<h2 id="costcomparison">Cost comparison</h2>
+<p>I researched <a href="https://aws.amazon.com/privatelink/pricing/?ref=blog.realvarez.com">PrivateLink pricing</a> and failed to come up with a fair comparison with <a href="https://aws.amazon.com/transit-gateway/pricing/?ref=blog.realvarez.com">Transit Gateway</a>. Unfortunately, there are too many vectors to provide a generalized price comparison. I recommend involving an AWS Solutions Architect for a detailed analysis.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>AWS provides many methods to connect services running in different VPCs. This post reviews the options available for EKS customers.</p>
+<p>You can simplify network topologies by interconnecting shared Amazon VPCs using connectivity features, such as AWS PrivateLink, transit gateways, and VPC peering.</p>
+<p>Here’s a rudimentary decision tree to help you get started.</p>
+<p><img src="https://res.craft.do/user/full/9d54cc03-adfe-f72f-3389-565eb7356d1d/doc/E750C457-EBD6-4BC9-B64B-82503E319F6A/72D10F42-0962-48E4-943A-9FE276BE2F8E_2/PqYS0hmHvG8fvXAKk6qx2F1t8kRnisyheEEtzekxtNMz/Image.png" alt="Image.png" loading="lazy"></p>
+<p>Did I get anything wrong? Please tweet me your feedback at <a href="https://twitter.com/realz?ref=blog.realvarez.com">@realz</a>.</p>
+<h2 id="furtherreading">Further Reading</h2>
+<p>AWS Whitepaper: <a href="https://d1.awsstatic.com/whitepapers/aws-privatelink.pdf?ref=blog.realvarez.com">Securely Access Services Over AWS PrivateLink</a></p>
+<p>AWS Whitepaper: <a href="https://d1.awsstatic.com/whitepapers/building-a-scalable-and-secure-multi-vpc-aws-network-infrastructure.pdf?ref=blog.realvarez.com">Building a Scalable and Secure Multi-VPC AWS Network Infrastructure</a></p>
+
+</div>
+<div class="container medium">
+<div class="share u-hover-wrapper">
+<a class="share-item share-facebook u-hover-item" href="https://www.facebook.com/sharer.php?u=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/" target="_blank" rel="noopener"><i class="icon icon-facebook"></i></a>
+<a class="share-item share-twitter u-hover-item" href="https://twitter.com/intent/tweet?url=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/&text=Connecting%20Kubernetes%20clusters%20across%20VPCs" target="_blank" rel="noopener"><i class="icon icon-twitter"></i></a>
+<a class="share-item share-pinterest u-hover-item" href="https://pinterest.com/pin/create/button/?url=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/&media=&description=Connecting%20Kubernetes%20clusters%20across%20VPCs" target="_blank" rel="noopener" data-pin-do="none"><i class="icon icon-pinterest"></i></a>
+<a class="share-item share-linkedin u-hover-item" href="https://www.linkedin.com/shareArticle?mini=true&url=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/&title=Connecting%20Kubernetes%20clusters%20across%20VPCs" target="_blank" rel="noopener"><i class="icon icon-linkedin"></i></a>
+<a class="share-item share-reddit u-hover-item" href="https://reddit.com/submit?url=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/&title=Connecting%20Kubernetes%20clusters%20across%20VPCs" target="_blank" rel="noopener"><i class="icon icon-reddit"></i></a>
+<a class="share-item share-tumblr u-hover-item" href="https://www.tumblr.com/widgets/share/tool?canonicalUrl=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/&title=Connecting%20Kubernetes%20clusters%20across%20VPCs" target="_blank" rel="noopener"><i class="icon icon-tumblr"></i></a>
+<a class="share-item share-vk u-hover-item" href="http://vk.com/share.php?url=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/&title=Connecting%20Kubernetes%20clusters%20across%20VPCs" target="_blank" rel="noopener"><i class="icon icon-vk"></i></a>
+<a class="share-item share-pocket u-hover-item" href="https://getpocket.com/edit?url=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/" target="_blank" rel="noopener"><i class="icon icon-pocket"></i></a>
+<a class="share-item share-telegram u-hover-item" href="https://t.me/share/url?url=https://realvz.github.io/blog/connecting-kubernetes-clusters-across-vpcs/&text=Connecting%20Kubernetes%20clusters%20across%20VPCs" target="_blank" rel="noopener"><i class="icon icon-telegram"></i></a>
+</div> </div>
+</article>
+<div class="navigation container medium">
+<div class="navigation-item navigation-previous">
+<a class="navigation-item-link button-arrow button-arrow-left" href="/my-learnings-from-benchmarking-fargate-tasks-on-graviton2-processors/">
+<i class="button-arrow-icon icon icon-arrow-left"></i> Previous Post
+</a>
+</div>
+<div class="navigation-item navigation-next">
+<a class="navigation-item-link button-arrow button-arrow-right" href="/are-we-giving-up-on-our-habits-too-soon/">
+Next Post <i class="button-arrow-icon icon icon-arrow-right"></i>
+</a>
+</div>
+</div> <section class="related-posts container medium">
+<h3 class="related-title"><span class="text">You might also like...</span></h3>
+<div class="row">
+<div class="col-md-4 related-column">
+<article class="post tag-aws tag-containers tag-amazon-eks tag-kubernetes tag-cloud tag-cost featured">
+<figure class="post-media">
+<div class="u-placeholder rectangle">
+<a class="post-image-link" href="/how-much-do-my-amazon-eks-nodes-cost/">
+<img class="post-image lazyload u-object-fit" data-srcset="https://images.unsplash.com/photo-1626266061368-46a8f578ddd6?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGNhbGN1bGF0b3J8ZW58MHx8fHwxNjUxNTE5NDE3&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;400 400w, https://images.unsplash.com/photo-1626266061368-46a8f578ddd6?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGNhbGN1bGF0b3J8ZW58MHx8fHwxNjUxNTE5NDE3&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;750 750w, https://images.unsplash.com/photo-1626266061368-46a8f578ddd6?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGNhbGN1bGF0b3J8ZW58MHx8fHwxNjUxNTE5NDE3&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;960 960w, https://images.unsplash.com/photo-1626266061368-46a8f578ddd6?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGNhbGN1bGF0b3J8ZW58MHx8fHwxNjUxNTE5NDE3&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;1140 1140w, https://images.unsplash.com/photo-1626266061368-46a8f578ddd6?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGNhbGN1bGF0b3J8ZW58MHx8fHwxNjUxNTE5NDE3&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;1920 1920w" data-sizes="auto" src="https://images.unsplash.com/photo-1626266061368-46a8f578ddd6?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDJ8fGNhbGN1bGF0b3J8ZW58MHx8fHwxNjUxNTE5NDE3&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;960" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="How much do my Amazon EKS nodes cost?">
+</a>
+</div>
+</figure>
+<header class="post-header">
+<h2 class="post-title">
+<a class="post-title-link" href="/how-much-do-my-amazon-eks-nodes-cost/">How much do my Amazon EKS nodes cost?</a>
+</h2>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2022-05-02">May 2, 2022</time>
+</span>
+<span class="post-meta-item post-meta-length">
+3 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-aws" href="/tag/aws/" title="AWS">AWS</a><a class="post-tag post-tag-containers" href="/tag/containers/" title="Containers">Containers</a><a class="post-tag post-tag-amazon-eks" href="/tag/amazon-eks/" title="Amazon EKS">Amazon EKS</a><a class="post-tag post-tag-kubernetes" href="/tag/kubernetes/" title="Kubernetes">Kubernetes</a><a class="post-tag post-tag-cloud" href="/tag/cloud/" title="Cloud">Cloud</a><a class="post-tag post-tag-cost" href="/tag/cost/" title="Cost">Cost</a>
+</span>
+</div>
+</header> </article>
+</div>
+<div class="col-md-4 related-column">
+<article class="post tag-aws tag-cloud tag-ecs tag-containers tag-fargate no-image no-image">
+<header class="post-header">
+<h2 class="post-title">
+<a class="post-title-link" href="/my-learnings-from-benchmarking-fargate-tasks-on-graviton2-processors/">My learnings from benchmarking Fargate tasks on Graviton2 processors</a>
+</h2>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2022-04-04">Apr 4, 2022</time>
+</span>
+<span class="post-meta-item post-meta-length">
+3 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-aws" href="/tag/aws/" title="AWS">AWS</a><a class="post-tag post-tag-cloud" href="/tag/cloud/" title="Cloud">Cloud</a><a class="post-tag post-tag-ecs" href="/tag/ecs/" title="ECS">ECS</a><a class="post-tag post-tag-containers" href="/tag/containers/" title="Containers">Containers</a><a class="post-tag post-tag-fargate" href="/tag/fargate/" title="Fargate">Fargate</a>
+</span>
+</div>
+</header> </article>
+</div>
+</div>
+</section>
+</main>
+</div>
+</div>
+<footer class="site-footer container large">
+<div class="copyright">
+Powered by <a href="https://ghost.org/" target="_blank" rel="noopener">Ghost</a>
+</div>
+<nav class="footer-nav">
+<ul class="nav-list u-plain-list">
+<li class="menu-item menu-item-sign-up"><a class="menu-item-link" href="https://realvz.github.io/blog/#/portal/">Sign up</a></li>
+</ul>
+</nav>
+<div class="footer-social">
+<a class="footer-social-item footer-social-item-twitter" href="https://twitter.com/realz" target="_blank" rel="noopener" aria-label="Twitter">
+<i class="icon icon-twitter"></i>
+</a>
+<a class="footer-social-item footer-social-item-rss" href="https://feedly.com/i/subscription/feed/https://realvz.github.io/blog/rss/" target="_blank" rel="noopener" aria-label="RSS">
+<i class="icon icon-rss"></i>
+</a>
+</div>
+</footer> </div>
+<div class="dimmer"></div>
+<div class="off-canvas">
+<div class="canvas-close">
+<i class="canvas-icon icon icon-window-close"></i>
+</div>
+<div class="mobile-menu"></div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous">
+    </script>
+<script src="/assets/built/main.min.js?v=ce0a9a97d4"></script>
+</body>
+</html>

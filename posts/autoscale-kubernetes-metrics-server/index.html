@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autoscale Kubernetes Metrics Server</title>
+<link rel="stylesheet" href="/assets/built/screen.css?v=ce0a9a97d4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Mulish:ital,wght@0,400;0,700;0,800;1,400;1,700&display=swap">
+<script>
+        if (localStorage.getItem('alto_dark') == 'true') {
+            document.documentElement.classList.add('dark-mode');
+        }
+    </script>
+<link rel="icon" href="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/04/code-branch.png" type="image/png">
+<link rel="canonical" href="https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/">
+<meta name="referrer" content="no-referrer-when-downgrade">
+<meta property="og:site_name" content="Re Alvarez Parmar&#x27;s Blog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Autoscale Kubernetes Metrics Server">
+<meta property="og:description" content="Many organizations are happy to standardize their infrastructure platform on Kubernetes. Kubernetes gives engineers a consistent platform across cloud providers and on premises. It abstracts underlying infrastructure so engineers can focus on writing code without having tight-coupling with methods for load balancing, observability, configuration, secrets management, etc.
+
+
+I frequently speak">
+<meta property="og:url" content="https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/">
+<meta property="og:image" content="https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;2000content/images/size/w1200">
+<meta property="article:published_time" content="2022-11-03T20:53:59.000Z">
+<meta property="article:modified_time" content="2022-11-07T23:14:35.000Z">
+<meta property="article:tag" content="Amazon EKS">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="Scaling">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Autoscale Kubernetes Metrics Server">
+<meta name="twitter:description" content="Many organizations are happy to standardize their infrastructure platform on Kubernetes. Kubernetes gives engineers a consistent platform across cloud providers and on premises. It abstracts underlying infrastructure so engineers can focus on writing code without having tight-coupling with methods for load balancing, observability, configuration, secrets management, etc.
+
+
+I frequently speak">
+<meta name="twitter:url" content="https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;2000content/images/size/w1200">
+<meta name="twitter:label1" content="Written by">
+<meta name="twitter:data1" content="Re Alvarez Parmar">
+<meta name="twitter:label2" content="Filed under">
+<meta name="twitter:data2" content="Amazon EKS, Kubernetes, Scaling">
+<meta name="twitter:site" content="@realz">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="750">
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Re Alvarez Parmar&#x27;s Blog",
+        "url": "https://realvz.github.io/blog/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/04/code-branch.png",
+            "width": 60,
+            "height": 60
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Re Alvarez Parmar",
+        "url": "https://realvz.github.io/blog/author/re-2/",
+        "sameAs": []
+    },
+    "headline": "Autoscale Kubernetes Metrics Server",
+    "url": "https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/",
+    "datePublished": "2022-11-03T20:53:59.000Z",
+    "dateModified": "2022-11-07T23:14:35.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&ixlib=rb-4.0.3&q=80&w=2000content/images/size/w1200",
+        "width": 1200,
+        "height": 750
+    },
+    "keywords": "Amazon EKS, Kubernetes, Scaling",
+    "description": "Many organizations are happy to standardize their infrastructure platform on Kubernetes. Kubernetes gives engineers a consistent platform across cloud providers and on premises. It abstracts underlying infrastructure so engineers can focus on writing code without having tight-coupling with methods for load balancing, observability, configuration, secrets management, etc.\n\n\nI frequently speak with organizations that run their entire workloads in one or two Kubernetes clusters. Effectively, they h",
+    "mainEntityOfPage": "https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/"
+}
+    </script>
+<meta name="generator" content="Ghost 5.79">
+<link rel="alternate" type="application/rss+xml" title="Re Alvarez Parmar&#x27;s Blog" href="https://realvz.github.io/blog/rss/">
+<script defer src="https://cdn.jsdelivr.net/ghost/portal@~2.37/umd/portal.min.js" data-i18n="false" data-ghost="https://realvz.github.io/blog/" data-key="875679d7145ae8b3c4db5168c2" data-api="https://realvz.github.io/blog/ghost/api/content/" crossorigin="anonymous"></script><style id="gh-members-styles">.gh-post-upgrade-cta-content,
+.gh-post-upgrade-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    text-align: center;
+    width: 100%;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.gh-post-upgrade-cta-content {
+    border-radius: 8px;
+    padding: 40px 4vw;
+}
+
+.gh-post-upgrade-cta h2 {
+    color: #ffffff;
+    font-size: 28px;
+    letter-spacing: -0.2px;
+    margin: 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta p {
+    margin: 20px 0 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta small {
+    font-size: 16px;
+    letter-spacing: -0.2px;
+}
+
+.gh-post-upgrade-cta a {
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 500;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a:hover {
+    color: #ffffff;
+    opacity: 0.8;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a.gh-btn {
+    display: block;
+    background: #ffffff;
+    text-decoration: none;
+    margin: 28px 0 0;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.gh-post-upgrade-cta a.gh-btn:hover {
+    opacity: 0.92;
+}</style>
+<script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/sodo-search.min.js" data-key="875679d7145ae8b3c4db5168c2" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/main.css" data-sodo-search="https://realvz.github.io/blog/" crossorigin="anonymous"></script>
+<link href="https://realvz.github.io/blog/webmentions/receive/" rel="webmention">
+<script defer src="/public/cards.min.js?v=ce0a9a97d4"></script>
+<link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=ce0a9a97d4">
+<script defer src="/public/member-attribution.min.js?v=ce0a9a97d4"></script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B5XRB3YVTR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B5XRB3YVTR');
+</script><style>:root {--ghost-accent-color: #3a88fe;}</style>
+</head>
+<body class="post-template tag-amazon-eks tag-kubernetes tag-scaling has-serif-title has-serif-body">
+<div class="site">
+<header class="site-header container">
+<div class="navbar">
+<div class="navbar-left">
+<div class="burger hidden-lg hidden-xl"></div>
+<a class="logo" href="https://realvz.github.io/blog">
+<span class="logo-text">Re Alvarez Parmar&#x27;s Blog</span>
+</a> <div class="sep hidden-xs hidden-sm hidden-sm"></div>
+<nav class="main-menu hidden-xs hidden-sm hidden-md">
+<ul class="nav-list u-plain-list">
+<li class="menu-item menu-item-home"><a class="menu-item-link" href="https://realvarez.com">Home</a></li>
+<li class="menu-item menu-item-about"><a class="menu-item-link" href="https://realvz.github.io/blog/about/">About</a></li>
+</ul>
+</nav>
+</div>
+<div class="navbar-right">
+<div class="toggle-track">
+<div class="toggle-moon"><i class="icon icon-brightness-2"></i></div>
+<div class="toggle-sun"><i class="icon icon-white-balance-sunny"></i></div>
+<div class="toggle-thumb"></div>
+</div>
+</div>
+</div>
+</header> <div class="site-content">
+<div class="content-area">
+<main class="site-main">
+<article class="post tag-amazon-eks tag-kubernetes tag-scaling single-post">
+<header class="post-header big-title container medium">
+<h1 class="post-title">Autoscale Kubernetes Metrics Server</h1>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2022-11-03">Nov 3, 2022</time>
+</span>
+<span class="post-meta-item post-meta-length">
+6 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-amazon-eks" href="/tag/amazon-eks/" title="Amazon EKS">Amazon EKS</a><a class="post-tag post-tag-kubernetes" href="/tag/kubernetes/" title="Kubernetes">Kubernetes</a><a class="post-tag post-tag-scaling" href="/tag/scaling/" title="Scaling">Scaling</a>
+</span>
+</div>
+</header> <figure class="post-media container large">
+<div class="u-placeholder horizontal">
+<a class="post-image-link" href="/autoscale-kubernetes-metrics-server/">
+<img class="post-image lazyload u-object-fit" data-srcset="https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;400 400w, https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;750 750w, https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960 960w, https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1140 1140w, https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1920 1920w" data-sizes="auto" src="https://images.unsplash.com/photo-1616085290809-064fcf10dc4a?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDN8fGV4cGFuZHxlbnwwfHx8fDE2Njc1MDg5MTk&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Autoscale Kubernetes Metrics Server">
+</a>
+</div>
+<figcaption>Photo by <a href="https://unsplash.com/@marekpiwnicki?utm_source=ghost&utm_medium=referral&utm_campaign=api-credit">Marek Piwnicki</a> / <a href="https://unsplash.com/?utm_source=ghost&utm_medium=referral&utm_campaign=api-credit">Unsplash</a></figcaption>
+</figure>
+<div class="post-content gh-content kg-canvas">
+<p>Many organizations are happy to standardize their infrastructure platform on Kubernetes. Kubernetes gives engineers a consistent platform across cloud providers and on premises. It abstracts underlying infrastructure so engineers can focus on writing code without having tight-coupling with methods for load balancing, observability, configuration, secrets management, etc.</p>
+<p>I frequently speak with organizations that run their entire workloads in one or two Kubernetes clusters. Effectively, they have moved their entire data centers into Kubernetes clusters.</p>
+<p>Now, Kubernetes is not without its flaws. Especially when operating at scale. Once clusters go beyond hundreds of nodes, nuanced behavior starts showing up. Besides scaling the Kubernetes control plane and data plane, platform teams have to scale Kubernetes components like CoreDNS, core components, and add-ons.</p>
+<p>In this post, I am going to show how to scale the metrics server add-on, so when your cluster scales the Horizontal Pod Autoscaler can reliably scale your workload.</p>
+<h2 id="scaling-kubernetes-add-ons">Scaling Kubernetes add-ons</h2>
+<p>Kubernetes add-ons are software packages that extend the functionality of Kubernetes. Vanilla Kubernetes clusters lack capabilities that most production clusters require. For example, data plane scaling functionality in Kubernetes is provided by the <a href="https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler?ref=blog.realvarez.com">Kubernetes Cluster Autoscaler</a>. Metrics server collects Node and Pod metrics. Log aggregators like Fluent Bit and Fluentd allow you to collect Kubernetes application and system logs.</p>
+<p>It is a best practice to deploy these add-ons with resource limits to account for bugs and memory leaks. Requests and limits allow us to control system resource allocated to each Pod. This feature makes it safer to run multiple Pods on a node without worrying about resource contention or oversubscription.</p>
+<p>Add-ons are deployed either as DaemonSets or Deployments. As a cluster scales, DaemonSets scale automatically as they run once per node. However, add-ons deployed as Deployments do not scale automatically because they are unaware of the size of the cluster’s scale.</p>
+<p>As the cluster scales, add-ons such as <a href="https://github.com/kubernetes-sigs/metrics-server?ref=blog.realvarez.com">metrics-server</a> and <a href="https://github.com/kubernetes/kube-state-metrics?ref=blog.realvarez.com">kube-state-metrics</a> have to hold more data in memory. The default resource requests on the metrics-server are sized for clusters of up to 100 nodes. In clusters larger than that, the metrics-server can run out of memory, which breaks the Horizontal Pod Autoscaler.</p>
+<p>As a result, operators have to scale add-ons, such as the metrics server, vertically as the cluster scales. <a href="https://github.com/kubernetes/autoscaler/tree/master/addon-resizer?ref=blog.realvarez.com">Addon-resizer</a> is an open source tool you can use to scale Deployments in proportion to the data plane. While the Kubernetes <a href="https://github.com/kubernetes-sigs/cluster-proportional-autoscaler?ref=blog.realvarez.com">Cluster Proportional Autoscaler</a> scales Deployments horizontally, the addon-resizer scales Deployments vertically.</p>
+<p>Some cloud providers use addon-resizer to scale the metrics-server add-on. Amazon EKS currently doesn't automatically scale metrics-server. I am going to run addon-resizer to autoscale the metrics-server Deployment in an EKS cluster.</p>
+<h2 id="addon-resizer">Addon-resizer</h2>
+<p>Addon-resizer is a container that vertically scales a Deployment based on the number of nodes in your cluster. It scales Deployments linearly as the cluster’s data plane grows and shrinks.</p>
+<p>The container monitors your cluster periodically and increases or decreases the requests and limits of a Deployment in proportion to the number of nodes. Vertical scaling implies that <strong>addon-resizer will recreate the Pods</strong> with newer resource limits.</p>
+<p>At the core of addon-resizer lies the *nanny *program.</p>
+<pre><code>Usage of ./pod_nanny:
+      --acceptance-offset=20: A number from range 0-100. The dependent's resources are rewritten when they deviate from expected by a percentage that is higher than this threshold. Can't be lower than recommendation-offset.
+      --alsologtostderr[=false]: log to standard error as well as files
+      --container=&quot;pod-nanny&quot;: The name of the container to watch. This defaults to the nanny itself.
+      --cpu=&quot;MISSING&quot;: The base CPU resource requirement.
+      --deployment=&quot;&quot;: The name of the deployment being monitored. This is required.
+      --extra-cpu=&quot;0&quot;: The amount of CPU to add per node.
+      --extra-memory=&quot;0Mi&quot;: The amount of memory to add per node.
+      --extra-storage=&quot;0Gi&quot;: The amount of storage to add per node.
+      --log-flush-frequency=5s: Maximum number of seconds between log flushes
+      --log_backtrace_at=:0: when logging hits line file:N, emit a stack trace
+      --log_dir=&quot;&quot;: If non-empty, write log files in this directory
+      --logtostderr[=true]: log to standard error instead of files
+      --memory=&quot;MISSING&quot;: The base memory resource requirement.
+      --namespace=&quot;&quot;: The namespace of the ward. This defaults to the nanny pod's own namespace.
+      --pod=&quot;&quot;: The name of the pod to watch. This defaults to the nanny's own pod.
+      --poll-period=10000: The time, in milliseconds, to poll the dependent container.
+      --recommendation-offset=10: A number from range 0-100. When the dependent's resources are rewritten, they are set to the closer end of the range defined by this percentage threshold.
+      --stderrthreshold=2: logs at or above this threshold go to stderr
+      --storage=&quot;MISSING&quot;: The base storage resource requirement.
+      --v=0: log level for V logs
+      --vmodule=: comma-separated list of pattern=N settings for file-filtered logging
+</code></pre>
+<p>The nanny program takes the base CPU and memory and adds extra resources per node. Here’s the formula it uses:</p>
+<pre><code>Base  CPU + (Extra CPU * Nodes)
+</code></pre>
+<p>Let’s say we allocate 100m CPU and 200Mi memory to a container in our cluster. We configure addon-resizer to add 1m CPU and 2Mi memory per node. When the cluster scales to 75 nodes, addon-resizer will scale the target container using the formula below:</p>
+<pre><code>100m+(1m*75) = 175m
+</code></pre>
+<p>It will also increase memory:</p>
+<pre><code>200Mi + (2Mi*75)= 350Mi
+</code></pre>
+<h2 id="scale-metrics-server">Scale metrics-server</h2>
+<p>The first question you may have is when should you scale metrics-server. The default resource configuration in metrics-server Deployment is recommended for clusters of up to 100 nodes. Beyond that you may notice the metrics-server restarting frequently (as it gets killed by Kubernetes Out of Memory killer).</p>
+<p>When metrics-server needs more resources than allocated <code>kubectl top nodes</code> and <code>kubectl top pods</code> will fail. You may get the following error message:</p>
+<p><code>unable to get metrics for resource cpu: unable to fetch metrics from resource metrics API: the server is currently unable to handle the request (get pods.metrics.k8s.io)</code></p>
+<p>Also, the Horizontal Pod Autoscaler may stop working. If you run <code>kubectl get apiservices v1beta1.metrics.k8s.io</code>, you may get the following message:</p>
+<pre><code>NAME                     SERVICE                      AVAILABLE                      AGE
+v1beta1.metrics.k8s.io   kube-system/metrics-server   False (FailedDiscoveryCheck)   12m
+</code></pre>
+<h2 id="deploy-addon-resizer">Deploy addon-resizer</h2>
+<p>The addon-resizer container can run in its own Pod or as a sidecar. We’re going to deploy the container as a sidecar in the metrics-server Deployment.</p>
+<p>The metrics server defaults to 100m CPU and 200Mi memory. Get the current limits:</p>
+<pre><code>kubectl -n kube-system get \
+  deployments metrics-server \
+  -o jsonpath='{.spec.template.spec.containers[].resources}'
+</code></pre>
+<p>Here’s the output from my cluster:</p>
+<pre><code>{&quot;requests&quot;:{&quot;cpu&quot;:&quot;100m&quot;,&quot;memory&quot;:&quot;200Mi&quot;}}
+</code></pre>
+<p>My cluster currently has 5 nodes. I’ll configure the addon-resizer to scale the metrics-server Deployment vertically by adding 1m CPU per node in addition to the base CPU which is set to 20m. The base memory is 15Mi, and addon-resizer will increase metrics-server memory by 2Mi per node. I took these values from addon-resizer recommendations.</p>
+<p>Deploy the manifest to create a ClusterRole, Role, and ClusterRoleBinding that gives the metrics-server service account the permissions to patch the metrics-server Deployment:</p>
+<pre><code>cat &lt;&lt;EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: eks:metrics-server-nanny
+  labels:
+    k8s-app: metrics-server
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eks:metrics-server-nanny
+  labels:
+    k8s-app: metrics-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: eks:metrics-server-nanny
+subjects:
+  - kind: ServiceAccount
+    name: metrics-server
+    namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: metrics-server-nanny
+  namespace: kube-system
+  labels:
+    k8s-app: metrics-server
+rules:
+- apiGroups:
+  - &quot;&quot;
+  resources:
+  - pods
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  resourceNames:
+  - metrics-server
+  verbs:
+  - get
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: metrics-server-nanny
+  namespace: kube-system
+  labels:
+    k8s-app: metrics-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: metrics-server-nanny
+subjects:
+  - kind: ServiceAccount
+    name: metrics-server
+    namespace: kube-system
+EOF
+</code></pre>
+<p>Create a patch file to add the nanny container to the metrics-server Deployment.</p>
+<pre><code>cat &gt; metrics-server-addon-patch.yaml &lt;&lt; EOF
+spec:
+  template:
+    spec:
+      containers:
+      - name: metrics-server-nanny
+          image: registry.k8s.io/autoscaling/addon-resizer:1.8.14
+          resources:
+            limits:
+              cpu: 40m
+              memory: 25Mi
+            requests:
+              cpu: 40m
+              memory: 25Mi
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /pod_nanny
+            - --cpu=20m
+            - --extra-cpu=1m
+            - --memory=15Mi
+            - --extra-memory=2Mi
+            - --threshold=5
+            - --deployment=metrics-server
+            - --container=metrics-server
+            - --poll-period=30000
+            - --estimator=exponential
+            - --minClusterSize=10
+            - --use-metrics=true
+EOF
+
+kubectl -n kube-system patch deployments metrics-server --patch-file metrics-server-addon-patch.yaml
+</code></pre>
+<p>If you install the metrics-server as documented in Amazon EKS documentation, it requests 100m CPU and 200Mi memory. After deploying the patch above, the metrics server requests set to 40m CPU and 15Mi memory. As you add more nodes, the nanny will automatically adjust the requests and limits for the metrics-server container.</p>
+<p>I scaled my cluster to 15 nodes and the addon-resizer configured metrics-server requests to 35m CPU and 45Mi memory.</p>
+<pre><code>20baseCPU+(15nodes*1extraCPU) = 35m
+
+</code></pre>
+<p>Memory calculation</p>
+<pre><code>15baseMemory+(15nodes*2extraMemory) = 45Mi
+
+</code></pre>
+<p>Addon-resizer calculates the resources reservation for the metrics-server container and restarts the container automatically.</p>
+<h2 id="what-about-scaling-metrics-server-horizontally">What about scaling metrics server horizontally?</h2>
+<p>While you can run metrics server in high-availability mode, its main purpose is ensuring that if one of the metrics server Pods terminate, the other one can still serve requests.</p>
+<p>Running two instances of metrics server doesn’t provide any further benefits. Both instances will scrape all nodes to collect metrics, but only one instance will be actively serving metrics API.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>The Amazon EKS documentation currently documents steps to deploy metrics-server in static configuration. You can use addon-resizer to autoscale the metrics-server based on the number of nodes in your cluster.</p>
+
+</div>
+<div class="container medium">
+<div class="share u-hover-wrapper">
+<a class="share-item share-facebook u-hover-item" href="https://www.facebook.com/sharer.php?u=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/" target="_blank" rel="noopener"><i class="icon icon-facebook"></i></a>
+<a class="share-item share-twitter u-hover-item" href="https://twitter.com/intent/tweet?url=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/&text=Autoscale%20Kubernetes%20Metrics%20Server" target="_blank" rel="noopener"><i class="icon icon-twitter"></i></a>
+<a class="share-item share-pinterest u-hover-item" href="https://pinterest.com/pin/create/button/?url=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/&media=&description=Autoscale%20Kubernetes%20Metrics%20Server" target="_blank" rel="noopener" data-pin-do="none"><i class="icon icon-pinterest"></i></a>
+<a class="share-item share-linkedin u-hover-item" href="https://www.linkedin.com/shareArticle?mini=true&url=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/&title=Autoscale%20Kubernetes%20Metrics%20Server" target="_blank" rel="noopener"><i class="icon icon-linkedin"></i></a>
+<a class="share-item share-reddit u-hover-item" href="https://reddit.com/submit?url=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/&title=Autoscale%20Kubernetes%20Metrics%20Server" target="_blank" rel="noopener"><i class="icon icon-reddit"></i></a>
+<a class="share-item share-tumblr u-hover-item" href="https://www.tumblr.com/widgets/share/tool?canonicalUrl=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/&title=Autoscale%20Kubernetes%20Metrics%20Server" target="_blank" rel="noopener"><i class="icon icon-tumblr"></i></a>
+<a class="share-item share-vk u-hover-item" href="http://vk.com/share.php?url=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/&title=Autoscale%20Kubernetes%20Metrics%20Server" target="_blank" rel="noopener"><i class="icon icon-vk"></i></a>
+<a class="share-item share-pocket u-hover-item" href="https://getpocket.com/edit?url=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/" target="_blank" rel="noopener"><i class="icon icon-pocket"></i></a>
+<a class="share-item share-telegram u-hover-item" href="https://t.me/share/url?url=https://realvz.github.io/blog/autoscale-kubernetes-metrics-server/&text=Autoscale%20Kubernetes%20Metrics%20Server" target="_blank" rel="noopener"><i class="icon icon-telegram"></i></a>
+</div> </div>
+</article>
+<div class="navigation container medium">
+<div class="navigation-item navigation-previous">
+<a class="navigation-item-link button-arrow button-arrow-left" href="/using-estargz-to-reduce-container-startup-time-on-amazon-eks/">
+<i class="button-arrow-icon icon icon-arrow-left"></i> Previous Post
+</a>
+</div>
+<div class="navigation-item navigation-next">
+<a class="navigation-item-link button-arrow button-arrow-right" href="/book-review-the-dawn-of-everything-by-david-graeber-david-wengrow/">
+Next Post <i class="button-arrow-icon icon icon-arrow-right"></i>
+</a>
+</div>
+</div> <section class="related-posts container medium">
+<h3 class="related-title"><span class="text">You might also like...</span></h3>
+<div class="row">
+<div class="col-md-4 related-column">
+<article class="post tag-nvidia tag-machine-learning tag-amazon-eks tag-kubernetes">
+<figure class="post-media">
+<div class="u-placeholder rectangle">
+<a class="post-image-link" href="/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/">
+<img class="post-image lazyload u-object-fit" data-srcset="https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;400 400w, https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;750 750w, https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960 960w, https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1140 1140w, https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1920 1920w" data-sizes="auto" src="https://images.unsplash.com/photo-1536620752150-a7e9e62a62ee?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;M3wxMTc3M3wwfDF8c2VhcmNofDI5fHx2ZXJ0aWNhbCUyMGxpbmVzfGVufDB8fHx8MTY4NDg4NDU5OHww&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Run more pods per GPU with NVIDIA Multi-Instance GPU">
+</a>
+</div>
+</figure>
+<header class="post-header">
+<h2 class="post-title">
+<a class="post-title-link" href="/get-more-out-of-gpus-with-nvidia-multi-instance-gpu/">Run more pods per GPU with NVIDIA Multi-Instance GPU</a>
+</h2>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2023-05-23">May 23, 2023</time>
+</span>
+<span class="post-meta-item post-meta-length">
+10 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-nvidia" href="/tag/nvidia/" title="NVIDIA">NVIDIA</a><a class="post-tag post-tag-machine-learning" href="/tag/machine-learning/" title="Machine Learning">Machine Learning</a><a class="post-tag post-tag-amazon-eks" href="/tag/amazon-eks/" title="Amazon EKS">Amazon EKS</a><a class="post-tag post-tag-kubernetes" href="/tag/kubernetes/" title="Kubernetes">Kubernetes</a>
+</span>
+</div>
+</header> </article>
+</div>
+<div class="col-md-4 related-column">
+<article class="post tag-amazon-eks tag-cost tag-kubernetes tag-scaling">
+<figure class="post-media">
+<div class="u-placeholder rectangle">
+<a class="post-image-link" href="/reduce-amazon-eks-cost-by-scaling-node-groups-to-zero/">
+<img class="post-image lazyload u-object-fit" data-srcset="https://images.unsplash.com/photo-1591617870684-6e861e6a48ad?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDR8fGdyYXBofGVufDB8fHx8MTY2ODYyODQ5Ng&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;400 400w, https://images.unsplash.com/photo-1591617870684-6e861e6a48ad?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDR8fGdyYXBofGVufDB8fHx8MTY2ODYyODQ5Ng&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;750 750w, https://images.unsplash.com/photo-1591617870684-6e861e6a48ad?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDR8fGdyYXBofGVufDB8fHx8MTY2ODYyODQ5Ng&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960 960w, https://images.unsplash.com/photo-1591617870684-6e861e6a48ad?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDR8fGdyYXBofGVufDB8fHx8MTY2ODYyODQ5Ng&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1140 1140w, https://images.unsplash.com/photo-1591617870684-6e861e6a48ad?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDR8fGdyYXBofGVufDB8fHx8MTY2ODYyODQ5Ng&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1920 1920w" data-sizes="auto" src="https://images.unsplash.com/photo-1591617870684-6e861e6a48ad?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDR8fGdyYXBofGVufDB8fHx8MTY2ODYyODQ5Ng&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Reduce Amazon EKS cost by scaling node groups to zero">
+</a>
+</div>
+</figure>
+<header class="post-header">
+<h2 class="post-title">
+<a class="post-title-link" href="/reduce-amazon-eks-cost-by-scaling-node-groups-to-zero/">Reduce Amazon EKS cost by scaling node groups to zero</a>
+</h2>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2022-11-16">Nov 16, 2022</time>
+</span>
+<span class="post-meta-item post-meta-length">
+5 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-amazon-eks" href="/tag/amazon-eks/" title="Amazon EKS">Amazon EKS</a><a class="post-tag post-tag-cost" href="/tag/cost/" title="Cost">Cost</a><a class="post-tag post-tag-kubernetes" href="/tag/kubernetes/" title="Kubernetes">Kubernetes</a><a class="post-tag post-tag-scaling" href="/tag/scaling/" title="Scaling">Scaling</a>
+</span>
+</div>
+</header> </article>
+</div>
+<div class="col-md-4 related-column">
+<article class="post tag-amazon-eks tag-kubernetes tag-containers tag-containerd">
+<figure class="post-media">
+<div class="u-placeholder rectangle">
+<a class="post-image-link" href="/using-estargz-to-reduce-container-startup-time-on-amazon-eks/">
+<img class="post-image lazyload u-object-fit" data-srcset="https://images.unsplash.com/photo-1578923931302-7fd9b3495be7?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDExfHxob3VyZ2xhc3N8ZW58MHx8fHwxNjY2NzM5NTc3&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;400 400w, https://images.unsplash.com/photo-1578923931302-7fd9b3495be7?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDExfHxob3VyZ2xhc3N8ZW58MHx8fHwxNjY2NzM5NTc3&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;750 750w, https://images.unsplash.com/photo-1578923931302-7fd9b3495be7?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDExfHxob3VyZ2xhc3N8ZW58MHx8fHwxNjY2NzM5NTc3&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960 960w, https://images.unsplash.com/photo-1578923931302-7fd9b3495be7?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDExfHxob3VyZ2xhc3N8ZW58MHx8fHwxNjY2NzM5NTc3&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1140 1140w, https://images.unsplash.com/photo-1578923931302-7fd9b3495be7?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDExfHxob3VyZ2xhc3N8ZW58MHx8fHwxNjY2NzM5NTc3&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;1920 1920w" data-sizes="auto" src="https://images.unsplash.com/photo-1578923931302-7fd9b3495be7?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDExfHxob3VyZ2xhc3N8ZW58MHx8fHwxNjY2NzM5NTc3&amp;ixlib&#x3D;rb-4.0.3&amp;q&#x3D;80&amp;w&#x3D;960" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Using eStargz to reduce container startup time on Amazon EKS">
+</a>
+</div>
+</figure>
+<header class="post-header">
+<h2 class="post-title">
+<a class="post-title-link" href="/using-estargz-to-reduce-container-startup-time-on-amazon-eks/">Using eStargz to reduce container startup time on Amazon EKS</a>
+</h2>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2022-10-25">Oct 25, 2022</time>
+</span>
+<span class="post-meta-item post-meta-length">
+7 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-amazon-eks" href="/tag/amazon-eks/" title="Amazon EKS">Amazon EKS</a><a class="post-tag post-tag-kubernetes" href="/tag/kubernetes/" title="Kubernetes">Kubernetes</a><a class="post-tag post-tag-containers" href="/tag/containers/" title="Containers">Containers</a><a class="post-tag post-tag-containerd" href="/tag/containerd/" title="Containerd">Containerd</a>
+</span>
+</div>
+</header> </article>
+</div>
+</div>
+</section>
+</main>
+</div>
+</div>
+<footer class="site-footer container large">
+<div class="copyright">
+Powered by <a href="https://ghost.org/" target="_blank" rel="noopener">Ghost</a>
+</div>
+<nav class="footer-nav">
+<ul class="nav-list u-plain-list">
+<li class="menu-item menu-item-sign-up"><a class="menu-item-link" href="https://realvz.github.io/blog/#/portal/">Sign up</a></li>
+</ul>
+</nav>
+<div class="footer-social">
+<a class="footer-social-item footer-social-item-twitter" href="https://twitter.com/realz" target="_blank" rel="noopener" aria-label="Twitter">
+<i class="icon icon-twitter"></i>
+</a>
+<a class="footer-social-item footer-social-item-rss" href="https://feedly.com/i/subscription/feed/https://realvz.github.io/blog/rss/" target="_blank" rel="noopener" aria-label="RSS">
+<i class="icon icon-rss"></i>
+</a>
+</div>
+</footer> </div>
+<div class="dimmer"></div>
+<div class="off-canvas">
+<div class="canvas-close">
+<i class="canvas-icon icon icon-window-close"></i>
+</div>
+<div class="mobile-menu"></div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous">
+    </script>
+<script src="/assets/built/main.min.js?v=ce0a9a97d4"></script>
+</body>
+</html>
