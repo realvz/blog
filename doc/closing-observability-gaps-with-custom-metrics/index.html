@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Closing observability gaps with custom metrics</title>
+<link rel="stylesheet" href="/assets/built/screen.css?v=ce0a9a97d4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Mulish:ital,wght@0,400;0,700;0,800;1,400;1,700&display=swap">
+<script>
+        if (localStorage.getItem('alto_dark') == 'true') {
+            document.documentElement.classList.add('dark-mode');
+        }
+    </script>
+<meta name="description" content="This post is an attempt to provide a list of metrics to collect in a typical microservice.">
+<link rel="icon" href="https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/04/code-branch.png" type="image/png">
+<link rel="canonical" href="https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/">
+<meta name="referrer" content="no-referrer-when-downgrade">
+<meta property="og:site_name" content="Re Alvarez Parmar&#x27;s Blog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Closing observability gaps with custom metrics">
+<meta property="og:description" content="This post is an attempt to provide a list of metrics to collect in a typical microservice.">
+<meta property="og:url" content="https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/">
+<meta property="og:image" content="https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;2000content/images/size/w1200">
+<meta property="article:published_time" content="2022-05-26T23:53:18.000Z">
+<meta property="article:modified_time" content="2022-05-27T00:12:21.000Z">
+<meta property="article:tag" content="Microservices">
+<meta property="article:tag" content="Software Design">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="Containers">
+<meta property="article:tag" content="Observability">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Closing observability gaps with custom metrics">
+<meta name="twitter:description" content="This post is an attempt to provide a list of metrics to collect in a typical microservice.">
+<meta name="twitter:url" content="https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;2000content/images/size/w1200">
+<meta name="twitter:label1" content="Written by">
+<meta name="twitter:data1" content="Re Alvarez Parmar">
+<meta name="twitter:label2" content="Filed under">
+<meta name="twitter:data2" content="Microservices, Software Design, Kubernetes, Containers, Observability">
+<meta name="twitter:site" content="@realz">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="800">
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Re Alvarez Parmar&#x27;s Blog",
+        "url": "https://realvz.github.io/blog/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://digitalpress.fra1.cdn.digitaloceanspaces.com/clrvv0c/2023/04/code-branch.png",
+            "width": 60,
+            "height": 60
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Re Alvarez Parmar",
+        "image": {
+            "@type": "ImageObject",
+            "url": "https://www.gravatar.com/avatar/2ea5788958b69e3c318e7b5c1562a2b4?s=250&r=x&d=mp",
+            "width": 250,
+            "height": 250
+        },
+        "url": "https://realvz.github.io/blog/author/re/",
+        "sameAs": []
+    },
+    "headline": "Closing observability gaps with custom metrics",
+    "url": "https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/",
+    "datePublished": "2022-05-26T23:53:18.000Z",
+    "dateModified": "2022-05-27T00:12:21.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&ixlib=rb-1.2.1&q=80&w=2000content/images/size/w1200",
+        "width": 1200,
+        "height": 800
+    },
+    "keywords": "Microservices, Software Design, Kubernetes, Containers, Observability",
+    "description": "This post is an attempt to provide a list of metrics to collect in a typical microservice. ",
+    "mainEntityOfPage": "https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/"
+}
+    </script>
+<meta name="generator" content="Ghost 5.79">
+<link rel="alternate" type="application/rss+xml" title="Re Alvarez Parmar&#x27;s Blog" href="https://realvz.github.io/blog/rss/">
+<script defer src="https://cdn.jsdelivr.net/ghost/portal@~2.37/umd/portal.min.js" data-i18n="false" data-ghost="https://realvz.github.io/blog/" data-key="875679d7145ae8b3c4db5168c2" data-api="https://realvz.github.io/blog/ghost/api/content/" crossorigin="anonymous"></script><style id="gh-members-styles">.gh-post-upgrade-cta-content,
+.gh-post-upgrade-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    text-align: center;
+    width: 100%;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.gh-post-upgrade-cta-content {
+    border-radius: 8px;
+    padding: 40px 4vw;
+}
+
+.gh-post-upgrade-cta h2 {
+    color: #ffffff;
+    font-size: 28px;
+    letter-spacing: -0.2px;
+    margin: 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta p {
+    margin: 20px 0 0;
+    padding: 0;
+}
+
+.gh-post-upgrade-cta small {
+    font-size: 16px;
+    letter-spacing: -0.2px;
+}
+
+.gh-post-upgrade-cta a {
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 500;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a:hover {
+    color: #ffffff;
+    opacity: 0.8;
+    box-shadow: none;
+    text-decoration: underline;
+}
+
+.gh-post-upgrade-cta a.gh-btn {
+    display: block;
+    background: #ffffff;
+    text-decoration: none;
+    margin: 28px 0 0;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.gh-post-upgrade-cta a.gh-btn:hover {
+    opacity: 0.92;
+}</style>
+<script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/sodo-search.min.js" data-key="875679d7145ae8b3c4db5168c2" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.1/umd/main.css" data-sodo-search="https://realvz.github.io/blog/" crossorigin="anonymous"></script>
+<link href="https://realvz.github.io/blog/webmentions/receive/" rel="webmention">
+<script defer src="/public/cards.min.js?v=ce0a9a97d4"></script>
+<link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=ce0a9a97d4">
+<script defer src="/public/member-attribution.min.js?v=ce0a9a97d4"></script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B5XRB3YVTR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B5XRB3YVTR');
+</script><style>:root {--ghost-accent-color: #3a88fe;}</style>
+</head>
+<body class="post-template tag-microservices tag-software-design tag-kubernetes tag-containers tag-observability has-serif-title has-serif-body">
+<div class="site">
+<header class="site-header container">
+<div class="navbar">
+<div class="navbar-left">
+<div class="burger hidden-lg hidden-xl"></div>
+<a class="logo" href="https://realvz.github.io/blog">
+<span class="logo-text">Re Alvarez Parmar&#x27;s Blog</span>
+</a> <div class="sep hidden-xs hidden-sm hidden-sm"></div>
+<nav class="main-menu hidden-xs hidden-sm hidden-md">
+<ul class="nav-list u-plain-list">
+<li class="menu-item menu-item-home"><a class="menu-item-link" href="https://realvarez.com">Home</a></li>
+<li class="menu-item menu-item-about"><a class="menu-item-link" href="https://realvz.github.io/blog/about/">About</a></li>
+</ul>
+</nav>
+</div>
+<div class="navbar-right">
+<div class="toggle-track">
+<div class="toggle-moon"><i class="icon icon-brightness-2"></i></div>
+<div class="toggle-sun"><i class="icon icon-white-balance-sunny"></i></div>
+<div class="toggle-thumb"></div>
+</div>
+</div>
+</div>
+</header> <div class="site-content">
+<div class="content-area">
+<main class="site-main">
+<article class="post tag-microservices tag-software-design tag-kubernetes tag-containers tag-observability featured single-post">
+<header class="post-header big-title container medium">
+<h1 class="post-title">Closing observability gaps with custom metrics</h1>
+<div class="post-meta">
+<span class="post-meta-item post-meta-date">
+<time datetime="2022-05-26">May 26, 2022</time>
+</span>
+<span class="post-meta-item post-meta-length">
+6 min read
+</span>
+<span class="post-meta-item post-meta-tags">
+<a class="post-tag post-tag-microservices" href="/tag/microservices/" title="Microservices">Microservices</a><a class="post-tag post-tag-software-design" href="/tag/software-design/" title="Software Design">Software Design</a><a class="post-tag post-tag-kubernetes" href="/tag/kubernetes/" title="Kubernetes">Kubernetes</a><a class="post-tag post-tag-containers" href="/tag/containers/" title="Containers">Containers</a><a class="post-tag post-tag-observability" href="/tag/observability/" title="Observability">Observability</a>
+</span>
+</div>
+</header> <figure class="post-media container large">
+<div class="u-placeholder horizontal">
+<a class="post-image-link" href="/closing-observability-gaps-with-custom-metrics/">
+<img class="post-image lazyload u-object-fit" data-srcset="https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;400 400w, https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;750 750w, https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;960 960w, https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;1140 1140w, https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;1920 1920w" data-sizes="auto" src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop&#x3D;entropy&amp;cs&#x3D;tinysrgb&amp;fit&#x3D;max&amp;fm&#x3D;jpg&amp;ixid&#x3D;MnwxMTc3M3wwfDF8c2VhcmNofDF8fG1ldHJpY3N8ZW58MHx8fHwxNjUzNjA5MjQy&amp;ixlib&#x3D;rb-1.2.1&amp;q&#x3D;80&amp;w&#x3D;960" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Closing observability gaps with custom metrics">
+</a>
+</div>
+<figcaption>Photo by <a href="https://unsplash.com/es/@lukechesser?utm_source=ghost&utm_medium=referral&utm_campaign=api-credit">Luke Chesser</a> / <a href="https://unsplash.com/?utm_source=ghost&utm_medium=referral&utm_campaign=api-credit">Unsplash</a></figcaption>
+</figure>
+<div class="post-content gh-content kg-canvas">
+<blockquote>
+<p><em>Which application metrics should you collect?</em></p>
+</blockquote>
+<p>I frequently engage with customers that are amid breaking their monolithic applications into smaller microservices. Many teams with also see this migration as an opportunity to make applications more observable. As a result, customers inquire which metrics they should monitor for a typical cloud native application.</p>
+<p>Previously, when a customer asked me how to instrument a service, I pointed them to the well known <a href="https://grafana.com/blog/2018/08/02/the-red-method-how-to-instrument-your-services/?ref=blog.realvarez.com">USE and RED methods</a>. But, I felt the response wasn’t thorough. A list of specific metrics to monitor can be helpful for teams building cloud native applications. This post is an attempt to provide a list of metrics to collect in a typical application. Not all the metrics listed below apply to every application type. For example, batch-like workloads rarely serve traffic, and resultantly, don't need to keep a log of requests-served.</p>
+<p>The goal of this document is to help developers come up with the golden signals for their applications.</p>
+<p>Golden Signals, a term used first in the <a href="https://sre.google/sre-book/monitoring-distributed-systems/?ref=blog.realvarez.com">Google SRE handbook</a>. Golden Signals are four metrics that will give you a very good idea of the real health and performance of your application as seen by the actors interacting with that service, whether they are final users or another service in your microservice application.</p>
+<h2 id="observability">Observability</h2>
+<p>Cloud best practices recommend building systems that are observable. While the word observability (or* *“<em>O11y</em>” as it is popularly known) doesn’t have an official definition, it is the measure of a system’s ability to expose its internal state. The three pillars of observability are logs, metrics, and traces.</p>
+<p>Modern systems are designed to produce logs, <em>emit</em> metrics, and provide traces to help developers and operators understand its internal state.</p>
+<p><a href="https://giedrius.blog/2019/05/11/push-vs-pull-in-monitoring-systems/?ref=blog.realvarez.com">Push vs Pull </a></p>
+<p>Emitting metrics by exposing them on an externally accessible HTTP endpoint is gaining wider adoption thanks to developers adopting Prometheus for monitoring. In this model, Prometheus pulls metrics by scraping the application’s <code>/metrics</code> endpoint.</p>
+<p>When you run Node Exporter, it publishes metrics at <code>http://localhost:9100/metrics</code></p>
+<p>Observability tools aggregate and analyze data from different sources to help you detect issues and identify bottlenecks. The goal is to use these system signals to improve its reliability and prevent downtime.</p>
+<p>AIOps products like <a href="https://aws.amazon.com/devops-guru/?ref=blog.realvarez.com">Amazon DevOps Guru</a> can also detect anomalies using your application's logs, metrics, and traces (and other sources) and give you early signals to prevent a potential disruption.</p>
+<h2 id="metrics-to-collect">Metrics to collect</h2>
+<p>For an application to function as designed, the application and its underlying system have to be <em>healthy</em>. Host metrics inform the operator of the host’s and infrastructure resource usage, like CPU, memory, I/O, etc. If you use Prometheus, <a href="https://github.com/prometheus/node_exporter?ref=blog.realvarez.com">Node Exporter</a> collects this information automatically for you.</p>
+<p>Host metrics rarely differ. Whether we run a process on an EC2 instance or a Raspberry Pi, we’re interested in the same metrics.</p>
+<p>Unlike host metrics, application metrics are unique to each microservice. Application metrics are supposed to provide the operator the information so they can do these things:</p>
+<ol>
+<li>
+<p>Identify future areas of improvement by providing code-specific measurements. Application monitoring or APM tools provide measurements over a segment of time that developers can analyze.</p>
+</li>
+<li>
+<p>When the system fails, provide information for troubleshooting and prevention.</p>
+</li>
+<li>
+<p>In some cases, provide early signals to business. For example, if the application exposes, the *orders *it has processed in the last 60 minutes can be tracked using the monitoring system, rather than querying a relational database.</p>
+</li>
+</ol>
+<p>There are several companies like application monitoring or APM companies like New Relic, DataDog that have products to aggregate application metrics using SDKs or agents. However, what they will not collect are the business specific metrics that only your application cares about.</p>
+<p>In order to create a list of relevant metrics for an application, its architects will need to determine a signal for its every key function. The hallmark of a microservice is that it does* one thing well*, therefore it shouldn’t have many key functions. Start by white-boarding the functions implemented in the code and creating a list of metrics that would help you gauge its performance (or its availability at the least).</p>
+<p>Most measurements you’ll do will fall under one of these categories:</p>
+<h4 id="counter">Counter</h4>
+<p>As the name suggests, this value is incremented when a function runs. Example: total requests served</p>
+<h4 id="histogram">Histogram</h4>
+<p>A histogram samples observations (usually things like request durations or response sizes) and counts them in configurable buckets.</p>
+<p><strong>Gauge</strong></p>
+<p>This type is metric tracks a value that increases or decreases over a period. Example: number of threads.</p>
+<hr>
+<p>With that background, let’s go through the list of common custom metrics developers use.</p>
+<h3 id="network-activity">Network activity</h3>
+<p>These are the obvious metrics to track for any application that serves traffic. Network metrics tell you how much load is placed on the system. Over the time, these data points assist you when devising the scaling strategy for the system.</p>
+<p>Things you should include are:</p>
+<ul>
+<li>
+<p>Request count by API type or page</p>
+</li>
+<li>
+<p>Requests total</p>
+</li>
+<li>
+<p>Transactions</p>
+</li>
+<li>
+<p>Concurrent, expired, and rejected sessions</p>
+</li>
+<li>
+<p>A watermark that records maximum concurrent sessions</p>
+</li>
+<li>
+<p>Average processing time</p>
+</li>
+<li>
+<p>A count by error type</p>
+</li>
+</ul>
+<h3 id="resource-usage">Resource usage</h3>
+<p>It is a best practice to monitor a systems <em>saturation</em>, which is a measure of your systems resource consumption. Every resource has a <em>breaking point</em>, beyond which additional stress causes performance degradation. Scalable and reliable systems are designed to never breach the breaking point.</p>
+<p>However, simply collecting overall resource saturation at an application level is insufficient. You also need to look deeper at thread or resource pool level.</p>
+<p>Consider collecting these metrics:</p>
+<ul>
+<li>
+<p>Number of processors, system CPU load, process CPU load, available memory, used memory, available swap, used swap, open file descriptor count.</p>
+</li>
+<li>
+<p>Total resources consumed by connection pools, thread pools, and any other resource pools.</p>
+</li>
+<li>
+<p>Total started thread count, current thread count, current busy threads, keep alive count, poller thread count, and connection count.</p>
+</li>
+<li>
+<p>Objects created, destroyed, and checked out, high-water mark, number of times checked out,</p>
+</li>
+<li>
+<p>Number of threads blocked waiting for a resource, number of times a thread has blocked waiting</p>
+</li>
+</ul>
+<p>Common frameworks like Tomcat, Flask, etc. support exporting pre-defined metrics. For example, JMX already exposes a bunch of these metrics. See <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContainerInsights-Prometheus-Sample-Workloads-javajmx.html?ref=blog.realvarez.com">AWS CloudWatch documentation</a>.</p>
+<h3 id="users">Users</h3>
+<p>Besides, serving the intended audience, bots or scripts flood internet facing web servers with requests. These automated requests can overload the system if unauthenticated requests are improperly handled (for example, not redirecting all unauthenticated requests to the authentication service and attempting to process an unauthenticated request).</p>
+<p>Here are user related metrics to collect:</p>
+<ul>
+<li>
+<p>Authenticated and unauthenticated requests</p>
+</li>
+<li>
+<p>Demographics, authenticated and unauthenticated requests, usage patterns,</p>
+</li>
+<li>
+<p>Unsuccessful login attempts</p>
+</li>
+</ul>
+<p>Some of these metrics may also come from your Load Balancer or ingress.</p>
+<h3 id="business-transaction-for-each-type">Business transaction (for each type)</h3>
+<p>If your application follows the microservices approach, then the code fulfills one function, at least that’s the idea. What are the key performance indicators for your app’s function? Define them and track these metrics.</p>
+<p>Should future releases cause performance regression, you’ll be able to detect it. Tracking these business metrics will help you track trends easily and avoid a cascading failure.</p>
+<p>Here are common things that services care about:</p>
+<ul>
+<li>
+<p>Orders, messages, requests, transactions processed</p>
+</li>
+<li>
+<p>Success and failure rates. For a retailer, this could be the conversion rate.</p>
+</li>
+<li>
+<p>Service level agreements (like average transaction response time)</p>
+</li>
+</ul>
+<p>If you still need help with identifying key metrics, ask yourself this question: In what ways can my application negatively affect the business even when it might appear to be healthy?</p>
+<h3 id="database-connections">Database connections</h3>
+<p>Along with monitoring your database instances using database monitoring tools, consider collecting database connection health metrics in your application. This is especially helpful if your application uses a shared database. If your application encounters database connection errors but the database remains operational for other application, you know the problem is on the application side, and not the database.</p>
+<p>Consider recording these databases-related metrics:</p>
+<ul>
+<li>
+<p>A count of <code>SQLException</code> thrown</p>
+</li>
+<li>
+<p>Number of (concurrent or maximum)queries</p>
+</li>
+<li>
+<p>Average query run time</p>
+</li>
+</ul>
+<h3 id="data-consumption">Data consumption</h3>
+<p>Wherever you’re persisting data, you need to ensure that you’re going to go over your quotas and run out of space. Besides, monitoring on disk and in-memory data volumes, don’t forget to monitor the data your application stores in databases and caches.</p>
+<h3 id="cache-health">Cache health</h3>
+<p>Speaking of cache, it is a best practice to monitor these metrics:</p>
+<ul>
+<li>
+<p>Items in cache</p>
+</li>
+<li>
+<p>Get and set latency</p>
+</li>
+<li>
+<p>Hits and miss rates</p>
+</li>
+<li>
+<p>Items flushed</p>
+</li>
+</ul>
+<p>Also, consider using an external cache such as Redis or Memcached.</p>
+<h3 id="external-services">External services</h3>
+<p>Keeping a track of how downstream services perform is also useful in understanding issues. Along with using timeouts, retries (preferably with <a href="https://en.wikipedia.org/wiki/Exponential_backoff?ref=blog.realvarez.com">exponential backoff</a>), and circuit breakers, consider monitoring these metrics for every external service your service's proper functioning depends on:</p>
+<ul>
+<li>
+<p>Circuit breaker status</p>
+</li>
+<li>
+<p>Count of timeouts, requests</p>
+</li>
+<li>
+<p>Average response time or latency</p>
+</li>
+<li>
+<p>Responses by type</p>
+</li>
+<li>
+<p>Network errors, protocol errors</p>
+</li>
+<li>
+<p>Requests in flight</p>
+</li>
+<li>
+<p>A high watermark of concurrent requests.</p>
+</li>
+</ul>
+<h3 id="granularity-in-metrics-collection">Granularity in metrics collection</h3>
+<p>The frequency at which you publish and collect metrics depends on your business requirements. For a retailer, knowing traffic patterns by the hour and day is useful in scaling capacity. Similarly, a travel company’s traffic pattern are influenced by holiday schedules.</p>
+<p>Amazon EC2 provides instance metrics at 1-minute interval, which is a good start for critical metrics.</p>
+<p>Remember that there’s a cost attached to exposing, collecting, and analyzing metrics. Collecting unnecessary information in metrics can put a strain on the system and slow down troubleshooting.</p>
+<p>Consider giving the operator the control over the metrics your code should generate. This way, you can turn on specific metrics whenever needed.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Finding out which metrics to collect is an answer that only the most familiar with the code can answer. This post provides a list of metrics for you to get started.</p>
+<p>Are there any metrics that I have overlooked? Let me know at <a href="https://twitter.com/realz?ref=blog.realvarez.com">@realz</a>.</p>
+<h2 id="references">References</h2>
+<p><a href="https://giedrius.blog/2019/05/11/push-vs-pull-in-monitoring-systems/?ref=blog.realvarez.com">Push Vs. Pull In Monitoring Systems – Giedrius Statkevičius</a></p>
+<p><a href="https://www.splunk.com/en_us/blog/learn/sre-metrics-four-golden-signals-of-monitoring.html?ref=blog.realvarez.com">SRE Metrics: Four Golden Signals of Monitoring</a></p>
+<p><a href="https://www.oreilly.com/library/view/learning-modern-linux/9781098108939/?ref=blog.realvarez.com">Learning Modern Linux</a></p>
+<p><a href="https://www.oreilly.com/library/view/release-it/9781680500264/?ref=blog.realvarez.com">Release It!</a></p>
+
+</div>
+<div class="container medium">
+<div class="share u-hover-wrapper">
+<a class="share-item share-facebook u-hover-item" href="https://www.facebook.com/sharer.php?u=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/" target="_blank" rel="noopener"><i class="icon icon-facebook"></i></a>
+<a class="share-item share-twitter u-hover-item" href="https://twitter.com/intent/tweet?url=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/&text=Closing%20observability%20gaps%20with%20custom%20metrics" target="_blank" rel="noopener"><i class="icon icon-twitter"></i></a>
+<a class="share-item share-pinterest u-hover-item" href="https://pinterest.com/pin/create/button/?url=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/&media=&description=Closing%20observability%20gaps%20with%20custom%20metrics" target="_blank" rel="noopener" data-pin-do="none"><i class="icon icon-pinterest"></i></a>
+<a class="share-item share-linkedin u-hover-item" href="https://www.linkedin.com/shareArticle?mini=true&url=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/&title=Closing%20observability%20gaps%20with%20custom%20metrics" target="_blank" rel="noopener"><i class="icon icon-linkedin"></i></a>
+<a class="share-item share-reddit u-hover-item" href="https://reddit.com/submit?url=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/&title=Closing%20observability%20gaps%20with%20custom%20metrics" target="_blank" rel="noopener"><i class="icon icon-reddit"></i></a>
+<a class="share-item share-tumblr u-hover-item" href="https://www.tumblr.com/widgets/share/tool?canonicalUrl=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/&title=Closing%20observability%20gaps%20with%20custom%20metrics" target="_blank" rel="noopener"><i class="icon icon-tumblr"></i></a>
+<a class="share-item share-vk u-hover-item" href="http://vk.com/share.php?url=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/&title=Closing%20observability%20gaps%20with%20custom%20metrics" target="_blank" rel="noopener"><i class="icon icon-vk"></i></a>
+<a class="share-item share-pocket u-hover-item" href="https://getpocket.com/edit?url=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/" target="_blank" rel="noopener"><i class="icon icon-pocket"></i></a>
+<a class="share-item share-telegram u-hover-item" href="https://t.me/share/url?url=https://realvz.github.io/blog/closing-observability-gaps-with-custom-metrics/&text=Closing%20observability%20gaps%20with%20custom%20metrics" target="_blank" rel="noopener"><i class="icon icon-telegram"></i></a>
+</div> </div>
+</article>
+<div class="navigation container medium">
+<div class="navigation-item navigation-previous">
+<a class="navigation-item-link button-arrow button-arrow-left" href="/how-much-do-my-amazon-eks-nodes-cost/">
+<i class="button-arrow-icon icon icon-arrow-left"></i> Previous Post
+</a>
+</div>
+<div class="navigation-item navigation-next">
+<a class="navigation-item-link button-arrow button-arrow-right" href="/weak-references-a-weapon-against-out-of-memory-errors/">
+Next Post <i class="button-arrow-icon icon icon-arrow-right"></i>
+</a>
+</div>
+</div> </main>
+</div>
+</div>
+<footer class="site-footer container large">
+<div class="copyright">
+Powered by <a href="https://ghost.org/" target="_blank" rel="noopener">Ghost</a>
+</div>
+<nav class="footer-nav">
+<ul class="nav-list u-plain-list">
+<li class="menu-item menu-item-sign-up"><a class="menu-item-link" href="https://realvz.github.io/blog/#/portal/">Sign up</a></li>
+</ul>
+</nav>
+<div class="footer-social">
+<a class="footer-social-item footer-social-item-twitter" href="https://twitter.com/realz" target="_blank" rel="noopener" aria-label="Twitter">
+<i class="icon icon-twitter"></i>
+</a>
+<a class="footer-social-item footer-social-item-rss" href="https://feedly.com/i/subscription/feed/https://realvz.github.io/blog/rss/" target="_blank" rel="noopener" aria-label="RSS">
+<i class="icon icon-rss"></i>
+</a>
+</div>
+</footer> </div>
+<div class="dimmer"></div>
+<div class="off-canvas">
+<div class="canvas-close">
+<i class="canvas-icon icon icon-window-close"></i>
+</div>
+<div class="mobile-menu"></div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous">
+    </script>
+<script src="/assets/built/main.min.js?v=ce0a9a97d4"></script>
+</body>
+</html>
