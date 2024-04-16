@@ -1,4 +1,4 @@
-baseURL = "http://example.org/"
+baseurl = "https://realvz.github.io/blog/"
 disablePathToLower = true
 languageCode = "en-us"
 title = "Re Alvarez Parmar's Blog"
@@ -7,3 +7,15 @@ title = "Re Alvarez Parmar's Blog"
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+      
+[[menu.primary]]
+identifier = "about"
+name = "About"
+url = "/about/"
+weight = 1
+
+[[menu.primary]]
+identifier = "blog"
+name = "Blog"
+url = "/blog/"
+weight = 2
